@@ -12,9 +12,13 @@ app.use(cors());
 app.use(express.json());
 
 import authRoutes from './routes/auth.routes';
+import cropRoutes from './routes/crop.routes';
+import schemeRoutes from './routes/scheme.routes';
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/crops', cropRoutes);
+app.use('/api/schemes', schemeRoutes);
 
 app.get('/', (req: Request, res: Response) => {
     res.json({ message: 'Welcome to AgroIntel API' });

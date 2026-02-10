@@ -19,6 +19,7 @@ model User {
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   passwordReset PasswordReset[]
+  crops         Crop[]
 }
 
 model PasswordReset {
@@ -29,4 +30,35 @@ model PasswordReset {
   expiresAt DateTime
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+
+model Crop {
+  id         Int      @id @default(autoincrement())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+  name       String
+  landVolume Float
+  landUnit   String
+  phase      String
+  country    String
+  state      String
+  district   String
+  place      String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Scheme {
+  id              Int      @id @default(autoincrement())
+  name            String
+  description     String
+  type            String   // Central, State, etc.
+  link            String?
+  // We'll store applicable crops as a comma-separated string for simplicity in SQLite 
+  // or use JSON if supported/needed, but string match is easier for "contains"
+  applicableCrops String   
+  benefits        String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

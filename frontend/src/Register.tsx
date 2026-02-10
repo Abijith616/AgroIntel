@@ -10,12 +10,39 @@ import { motion } from "framer-motion";
 export default function Register() {
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
-    const [formData, setFormData] = useState({ username: "", email: "", password: "" });
+    const [formData, setFormData] = useState({ username: "", email: "", password: "", confirmPassword: "" });
     const [error, setError] = useState("");
     const [isSuccess, setIsSuccess] = useState(false);
+    const [validationErrors, setValidationErrors] = useState({ email: "", confirmPassword: "" });
+
+    const validateEmail = (email: string) => {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.id]: e.target.value });
+        const { id, value } = e.target;
+        const updatedFormData = { ...formData, [id]: value };
+        setFormData(updatedFormData);
+
+        const newErrors = { ...validationErrors };
+
+        if (id === 'email') {
+            if (value && !validateEmail(value)) {
+                newErrors.email = "Invalid email format";
+            } else {
+                newErrors.email = "";
+            }
+        }
+
+        if (id === 'password' || id === 'confirmPassword') {
+            if (updatedFormData.confirmPassword && updatedFormData.password !== updatedFormData.confirmPassword) {
+                newErrors.confirmPassword = "Passwords do not match";
+            } else {
+                newErrors.confirmPassword = "";
+            }
+        }
+
+        setValidationErrors(newErrors);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -23,11 +50,18 @@ export default function Register() {
         setIsLoading(true);
         setError("");
 
+        if (formData.password !== formData.confirmPassword) {
+            setError("Passwords do not match");
+            setIsLoading(false);
+            return;
+        }
+
         try {
+            const { confirmPassword, ...submitData } = formData;
             const response = await fetch('http://localhost:3000/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(submitData)
             });
 
             const data = await response.json();
@@ -172,10 +206,13 @@ export default function Register() {
                                             type="email"
                                             placeholder="m@example.com"
                                             required
-                                            className="bg-muted/30"
+                                            className={`bg-muted/30 ${validationErrors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                                             value={formData.email}
                                             onChange={handleChange}
                                         />
+                                        {validationErrors.email && (
+                                            <p className="text-xs text-red-500 mt-1">{validationErrors.email}</p>
+                                        )}
                                     </div>
 
                                     <div className="space-y-2">
@@ -188,6 +225,21 @@ export default function Register() {
                                             value={formData.password}
                                             onChange={handleChange}
                                         />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="confirmPassword">Confirm Password</Label>
+                                        <Input
+                                            id="confirmPassword"
+                                            type="password"
+                                            required
+                                            className={`bg-muted/30 ${validationErrors.confirmPassword ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                                            value={formData.confirmPassword}
+                                            onChange={handleChange}
+                                        />
+                                        {validationErrors.confirmPassword && (
+                                            <p className="text-xs text-red-500 mt-1">{validationErrors.confirmPassword}</p>
+                                        )}
                                     </div>
 
                                     <Button type="submit" className="w-full font-semibold shadow-md" size="lg" disabled={isLoading}>

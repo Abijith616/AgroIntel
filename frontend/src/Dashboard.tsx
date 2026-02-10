@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import {
     Leaf, LogOut, Sprout, TrendingUp, DollarSign, BarChart3,
     CloudSun, Download, Warehouse, Phone, Wind, Droplets,
-    AlertTriangle, ArrowUpRight, ArrowDownRight, FileText, Landmark
+    AlertTriangle, ArrowUpRight, ArrowDownRight, FileText, Landmark,
+    Pencil, Trash2
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
@@ -14,6 +15,8 @@ export default function Dashboard() {
     const navigate = useNavigate();
     const [user, setUser] = useState<{ username: string, email: string } | null>(null);
 
+    const [crops, setCrops] = useState<any[]>([]);
+
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
         if (!storedUser) {
@@ -21,12 +24,51 @@ export default function Dashboard() {
         } else {
             setUser(JSON.parse(storedUser));
         }
+
+        const fetchCrops = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('http://localhost:3000/api/crops', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setCrops(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch crops", error);
+            }
+        };
+
+        if (storedUser) {
+            fetchCrops();
+        }
     }, [navigate]);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         navigate('/login');
+    };
+
+    const handleDelete = async (id: number) => {
+        if (!confirm('Are you sure you want to delete this crop?')) return;
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`http://localhost:3000/api/crops/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                setCrops(crops.filter(crop => crop.id !== id));
+            } else {
+                alert('Failed to delete crop');
+            }
+        } catch (error) {
+            console.error("Failed to delete crop", error);
+        }
     };
 
     if (!user) return null;
@@ -49,15 +91,15 @@ export default function Dashboard() {
     return (
         <div className="min-h-screen bg-muted/30">
             {/* Header */}
-            <header className="bg-background/80 backdrop-blur-md border-b px-6 py-4 flex items-center justify-between sticky top-0 z-50">
-                <div className="flex items-center gap-2">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-                        <Leaf className="h-5 w-5" />
+            <header className="bg-background/80 backdrop-blur-md border-b px-8 py-6 flex items-center justify-between sticky top-0 z-50">
+                <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+                        <Leaf className="h-6 w-6" />
                     </div>
-                    <span className="text-xl font-bold tracking-tight text-foreground">Agro<span className="text-primary">Intel</span></span>
+                    <span className="text-2xl font-bold tracking-tight text-foreground">Agro<span className="text-primary">Intel</span></span>
                 </div>
                 <div className="flex items-center gap-4">
-                    <span className="text-sm text-muted-foreground hidden sm:inline-block">Welcome back, <span className="font-semibold text-foreground">{user.username}</span></span>
+                    <span className="text-base text-muted-foreground hidden sm:inline-block">Welcome back, <span className="font-semibold text-foreground">{user.username}</span></span>
                     <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-destructive hover:bg-destructive/10">
                         <LogOut className="h-4 w-4 mr-2" />
                         Log out
@@ -65,22 +107,22 @@ export default function Dashboard() {
                 </div>
             </header>
 
-            <main className="p-4 md:p-8 max-w-[1600px] mx-auto">
+            <main className="p-6 md:p-10 max-w-[1800px] mx-auto">
                 <motion.div
                     variants={container}
                     initial="hidden"
                     animate="show"
-                    className="space-y-6"
+                    className="space-y-8"
                 >
                     <div className="flex items-center justify-between">
-                        <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
-                        <div className="flex gap-2">
-                            <Button variant="outline" className="gap-2">
-                                <Download className="h-4 w-4" />
+                        <h1 className="text-4xl font-bold tracking-tight">Dashboard Overview</h1>
+                        <div className="flex gap-3">
+                            <Button variant="outline" className="gap-2 h-11 text-base">
+                                <Download className="h-5 w-5" />
                                 Export Report
                             </Button>
-                            <Button className="gap-2">
-                                <Phone className="h-4 w-4" />
+                            <Button className="gap-2 h-11 text-base">
+                                <Phone className="h-5 w-5" />
                                 Contact Expert
                             </Button>
                         </div>
@@ -91,28 +133,28 @@ export default function Dashboard() {
                         <motion.div variants={item}>
                             <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-100 shadow-sm">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium text-green-900">Weather Alert</CardTitle>
-                                    <CloudSun className="h-4 w-4 text-green-600" />
+                                    <CardTitle className="text-base font-medium text-green-900">Weather Alert</CardTitle>
+                                    <CloudSun className="h-5 w-5 text-green-600" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold text-green-800">28°C</div>
-                                    <p className="text-xs text-green-600 mt-1 flex items-center">
-                                        <Wind className="h-3 w-3 mr-1" /> 12km/h
-                                        <Droplets className="h-3 w-3 ml-2 mr-1" /> 45%
+                                    <div className="text-3xl font-bold text-green-800">28°C</div>
+                                    <p className="text-sm text-green-600 mt-1 flex items-center">
+                                        <Wind className="h-4 w-4 mr-1" /> 12km/h
+                                        <Droplets className="h-4 w-4 ml-2 mr-1" /> 45%
                                     </p>
-                                    <p className="text-xs text-muted-foreground mt-2">Sunny intervals expected today.</p>
+                                    <p className="text-sm text-muted-foreground mt-2">Sunny intervals expected today.</p>
                                 </CardContent>
                             </Card>
                         </motion.div>
                         <motion.div variants={item}>
                             <Card className="shadow-sm">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Market Opportunities</CardTitle>
-                                    <TrendingUp className="h-4 w-4 text-primary" />
+                                    <CardTitle className="text-base font-medium">Market Opportunities</CardTitle>
+                                    <TrendingUp className="h-5 w-5 text-primary" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">High Demand</div>
-                                    <p className="text-xs text-muted-foreground mt-1">Wheat prices up by 5% in local mandis.</p>
+                                    <div className="text-3xl font-bold">High Demand</div>
+                                    <p className="text-sm text-muted-foreground mt-1">Wheat prices up by 5% in local mandis.</p>
                                     <Badge variant="secondary" className="mt-2 bg-primary/10 text-primary hover:bg-primary/20">Sell Recommended</Badge>
                                 </CardContent>
                             </Card>
@@ -120,29 +162,29 @@ export default function Dashboard() {
                         <motion.div variants={item}>
                             <Card className="shadow-sm">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Storage Status</CardTitle>
-                                    <Warehouse className="h-4 w-4 text-blue-500" />
+                                    <CardTitle className="text-base font-medium">Storage Status</CardTitle>
+                                    <Warehouse className="h-5 w-5 text-blue-500" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">85% Full</div>
-                                    <p className="text-xs text-muted-foreground mt-1">Silo A needs maintenance check.</p>
-                                    <p className="text-xs text-blue-600 font-medium mt-2 cursor-pointer hover:underline">View Strategy &gt;</p>
+                                    <div className="text-3xl font-bold">85% Full</div>
+                                    <p className="text-sm text-muted-foreground mt-1">Silo A needs maintenance check.</p>
+                                    <p className="text-sm text-blue-600 font-medium mt-2 cursor-pointer hover:underline">View Strategy &gt;</p>
                                 </CardContent>
                             </Card>
                         </motion.div>
                         <motion.div variants={item}>
                             <Card className="shadow-sm">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Today's Price</CardTitle>
-                                    <DollarSign className="h-4 w-4 text-yellow-600" />
+                                    <CardTitle className="text-base font-medium">Today's Price</CardTitle>
+                                    <DollarSign className="h-5 w-5 text-yellow-600" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">₹2,150<span className="text-sm font-normal text-muted-foreground">/qt</span></div>
-                                    <div className="flex items-center text-xs text-green-600 mt-1">
-                                        <ArrowUpRight className="h-3 w-3 mr-1" />
+                                    <div className="text-3xl font-bold">₹2,150<span className="text-lg font-normal text-muted-foreground">/qt</span></div>
+                                    <div className="flex items-center text-sm text-green-600 mt-1">
+                                        <ArrowUpRight className="h-4 w-4 mr-1" />
                                         +2.4% vs yesterday
                                     </div>
-                                    <p className="text-xs text-muted-foreground mt-2">Wheat (Common)</p>
+                                    <p className="text-sm text-muted-foreground mt-2">Wheat (Common)</p>
                                 </CardContent>
                             </Card>
                         </motion.div>
@@ -152,35 +194,46 @@ export default function Dashboard() {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                         {/* Left Column (2/3) */}
-                        <div className="lg:col-span-2 space-y-6">
+                        <div className="lg:col-span-2 space-y-8">
                             {/* My Crops */}
                             <motion.div variants={item}>
                                 <Card className="shadow-sm">
                                     <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <Sprout className="h-5 w-5 text-green-600" />
+                                        <CardTitle className="flex items-center gap-3 text-2xl">
+                                            <Sprout className="h-6 w-6 text-green-600" />
                                             My Crops
                                         </CardTitle>
-                                        <CardDescription>Current active cultivation status</CardDescription>
+                                        <CardDescription className="text-base">Current active cultivation status</CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="space-y-4">
-                                            {[
-                                                { name: "Wheat (HD-2967)", stage: "Heading", health: "Good", area: "12 Acres", harvest: "15 Days" },
-                                                { name: "Mustard (Pusa-31)", stage: "Flowering", health: "Excellent", area: "8 Acres", harvest: "30 Days" },
-                                            ].map((crop, i) => (
-                                                <div key={i} className="flex items-center justify-between p-4 bg-muted/20 rounded-lg border">
-                                                    <div>
-                                                        <h4 className="font-semibold">{crop.name}</h4>
-                                                        <p className="text-sm text-muted-foreground">Stage: {crop.stage} • Area: {crop.area}</p>
+                                            {crops.length === 0 ? (
+                                                <p className="text-center text-sm text-muted-foreground py-4">No active crops found. Add your first crop!</p>
+                                            ) : (
+                                                crops.map((crop, i) => (
+                                                    <div key={i} className="flex items-center justify-between p-5 bg-muted/20 rounded-lg border">
+                                                        <div>
+                                                            <h4 className="font-semibold text-lg">{crop.name}</h4>
+                                                            <p className="text-base text-muted-foreground">Stage: {crop.phase} • Area: {crop.landVolume} {crop.landUnit}</p>
+                                                            <p className="text-sm text-muted-foreground mt-1">{crop.place}, {crop.district}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-4">
+                                                            <Badge className={`text-sm px-3 py-1 ${crop.phase === 'Harvest Stage' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-600 hover:bg-green-700'}`}>
+                                                                {crop.phase === 'Harvest Stage' ? 'Ready' : 'Growing'}
+                                                            </Badge>
+                                                            <div className="flex gap-2">
+                                                                <Button variant="ghost" size="icon" className="h-10 w-10 hover:bg-background/80" onClick={() => navigate(`/edit-crop/${crop.id}`)}>
+                                                                    <Pencil className="h-5 w-5 text-muted-foreground hover:text-primary" />
+                                                                </Button>
+                                                                <Button variant="ghost" size="icon" className="h-10 w-10 hover:bg-background/80" onClick={() => handleDelete(crop.id)}>
+                                                                    <Trash2 className="h-5 w-5 text-muted-foreground hover:text-destructive" />
+                                                                </Button>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div className="text-right">
-                                                        <Badge className={crop.health === 'Excellent' ? 'bg-green-500 hover:bg-green-600' : 'bg-primary hover:bg-primary/90'}>{crop.health}</Badge>
-                                                        <p className="text-xs text-muted-foreground mt-1">Harvest in {crop.harvest}</p>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            <Button variant="outline" className="w-full border-dashed">
+                                                ))
+                                            )}
+                                            <Button variant="outline" className="w-full border-dashed h-12 text-base" onClick={() => navigate('/add-crop')}>
                                                 + Add New Crop
                                             </Button>
                                         </div>
@@ -192,27 +245,27 @@ export default function Dashboard() {
                             <motion.div variants={item}>
                                 <Card className="shadow-sm">
                                     <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <BarChart3 className="h-5 w-5 text-blue-600" />
+                                        <CardTitle className="flex items-center gap-3 text-2xl">
+                                            <BarChart3 className="h-6 w-6 text-blue-600" />
                                             Market Intelligence
                                         </CardTitle>
-                                        <CardDescription>Price trend analysis for your region</CardDescription>
+                                        <CardDescription className="text-base">Price trend analysis for your region</CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="h-[200px] w-full flex items-center justify-center bg-muted/20 rounded-lg border-dashed border-2 border-muted">
-                                            <p className="text-muted-foreground text-sm flex items-center">
-                                                <BarChart3 className="mr-2 h-4 w-4" />
+                                        <div className="h-[250px] w-full flex items-center justify-center bg-muted/20 rounded-lg border-dashed border-2 border-muted">
+                                            <p className="text-muted-foreground text-base flex items-center">
+                                                <BarChart3 className="mr-2 h-5 w-5" />
                                                 Interactive Price Chart Component Loading...
                                             </p>
                                         </div>
                                         <div className="grid grid-cols-2 gap-4 mt-4">
-                                            <div className="p-3 bg-blue-50/50 rounded-lg border border-blue-100">
-                                                <p className="text-xs text-muted-foreground">Highest Price (Month)</p>
-                                                <p className="font-semibold text-blue-700">₹2,300/qt</p>
+                                            <div className="p-4 bg-blue-50/50 rounded-lg border border-blue-100">
+                                                <p className="text-sm text-muted-foreground">Highest Price (Month)</p>
+                                                <p className="text-xl font-semibold text-blue-700">₹2,300/qt</p>
                                             </div>
-                                            <div className="p-3 bg-blue-50/50 rounded-lg border border-blue-100">
-                                                <p className="text-xs text-muted-foreground">Lowest Price (Month)</p>
-                                                <p className="font-semibold text-blue-700">₹2,050/qt</p>
+                                            <div className="p-4 bg-blue-50/50 rounded-lg border border-blue-100">
+                                                <p className="text-sm text-muted-foreground">Lowest Price (Month)</p>
+                                                <p className="text-xl font-semibold text-blue-700">₹2,050/qt</p>
                                             </div>
                                         </div>
                                     </CardContent>
@@ -227,15 +280,15 @@ export default function Dashboard() {
                             <motion.div variants={item}>
                                 <Card className="bg-primary/5 border-primary/20 shadow-sm">
                                     <CardHeader>
-                                        <CardTitle className="text-lg">Quick Actions</CardTitle>
+                                        <CardTitle className="text-xl">Quick Actions</CardTitle>
                                     </CardHeader>
-                                    <CardContent className="space-y-2">
-                                        <Button className="w-full justify-start bg-white hover:bg-white/90 text-primary border border-primary/10 shadow-sm" variant="outline">
-                                            <FileText className="mr-2 h-4 w-4" />
+                                    <CardContent className="space-y-3">
+                                        <Button className="w-full justify-start bg-white hover:bg-white/90 text-primary border border-primary/10 shadow-sm h-11 text-base" variant="outline">
+                                            <FileText className="mr-2 h-5 w-5" />
                                             Generate Monthly Report
                                         </Button>
-                                        <Button className="w-full justify-start bg-white hover:bg-white/90 text-primary border border-primary/10 shadow-sm" variant="outline">
-                                            <ArrowDownRight className="mr-2 h-4 w-4" />
+                                        <Button className="w-full justify-start bg-white hover:bg-white/90 text-primary border border-primary/10 shadow-sm h-11 text-base" variant="outline">
+                                            <ArrowDownRight className="mr-2 h-5 w-5" />
                                             Record Expense
                                         </Button>
                                     </CardContent>
@@ -245,19 +298,19 @@ export default function Dashboard() {
                             {/* Government Schemes */}
                             <motion.div variants={item}>
                                 <Card className="bg-orange-50/50 border-orange-100 shadow-sm">
-                                    <CardHeader className="pb-3">
-                                        <CardTitle className="flex items-center gap-2 text-base">
-                                            <Landmark className="h-4 w-4 text-orange-600" />
+                                    <CardHeader className="pb-4">
+                                        <CardTitle className="flex items-center gap-3 text-lg">
+                                            <Landmark className="h-5 w-5 text-orange-600" />
                                             Government Schemes
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="space-y-3">
-                                            <div className="p-3 bg-white rounded-lg border border-orange-100 shadow-sm">
-                                                <h4 className="font-semibold text-sm text-foreground">PM-KISAN Samman Nidhi</h4>
-                                                <p className="text-xs text-muted-foreground mt-1">Next installment of ₹2,000 due next month. Check eligibility.</p>
+                                        <div className="space-y-4">
+                                            <div className="p-4 bg-white rounded-lg border border-orange-100 shadow-sm">
+                                                <h4 className="font-semibold text-base text-foreground">PM-KISAN Samman Nidhi</h4>
+                                                <p className="text-sm text-muted-foreground mt-1">Next installment of ₹2,000 due next month. Check eligibility.</p>
                                             </div>
-                                            <Button variant="link" className="p-0 h-auto text-xs text-orange-600 font-medium">
+                                            <Button variant="link" className="p-0 h-auto text-sm text-orange-600 font-medium" onClick={() => navigate('/schemes')}>
                                                 View All Active Schemes &rarr;
                                             </Button>
                                         </div>
@@ -269,26 +322,26 @@ export default function Dashboard() {
                             <motion.div variants={item}>
                                 <Card className="shadow-sm">
                                     <CardHeader>
-                                        <CardTitle className="flex items-center gap-2 text-base">
-                                            <AlertTriangle className="h-4 w-4 text-orange-500" />
+                                        <CardTitle className="flex items-center gap-3 text-lg">
+                                            <AlertTriangle className="h-5 w-5 text-orange-500" />
                                             Recent Alerts
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="space-y-4">
-                                            <div className="pb-4 border-b last:border-0 last:pb-0">
+                                        <div className="space-y-5">
+                                            <div className="pb-5 border-b last:border-0 last:pb-0">
                                                 <div className="flex justify-between items-start mb-1">
-                                                    <h4 className="text-sm font-medium text-orange-700">Pest Alert</h4>
-                                                    <span className="text-[10px] text-muted-foreground">2h ago</span>
+                                                    <h4 className="text-base font-medium text-orange-700">Pest Alert</h4>
+                                                    <span className="text-xs text-muted-foreground">2h ago</span>
                                                 </div>
-                                                <p className="text-xs text-muted-foreground">High probability of aphid attack in Wheat due to rising humidity.</p>
+                                                <p className="text-sm text-muted-foreground">High probability of aphid attack in Wheat due to rising humidity.</p>
                                             </div>
-                                            <div className="pb-4 border-b last:border-0 last:pb-0">
+                                            <div className="pb-5 border-b last:border-0 last:pb-0">
                                                 <div className="flex justify-between items-start mb-1">
-                                                    <h4 className="text-sm font-medium text-blue-700">Irrigation</h4>
-                                                    <span className="text-[10px] text-muted-foreground">Yesterday</span>
+                                                    <h4 className="text-base font-medium text-blue-700">Irrigation</h4>
+                                                    <span className="text-xs text-muted-foreground">Yesterday</span>
                                                 </div>
-                                                <p className="text-xs text-muted-foreground">Time to irrigate Mustard fields for optimal pod formation.</p>
+                                                <p className="text-sm text-muted-foreground">Time to irrigate Mustard fields for optimal pod formation.</p>
                                             </div>
                                         </div>
                                     </CardContent>
@@ -298,13 +351,13 @@ export default function Dashboard() {
                             {/* Contact */}
                             <motion.div variants={item}>
                                 <Card className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-md border-0">
-                                    <CardContent className="pt-6">
-                                        <div className="mb-4 h-10 w-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                                            <Phone className="h-5 w-5 text-white" />
+                                    <CardContent className="pt-8">
+                                        <div className="mb-6 h-12 w-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                                            <Phone className="h-6 w-6 text-white" />
                                         </div>
-                                        <h3 className="text-lg font-bold mb-1">Need Expert Help?</h3>
-                                        <p className="text-indigo-100 text-sm mb-4">Connect with our agricultural scientists for personalized advice.</p>
-                                        <Button variant="secondary" className="w-full font-semibold text-indigo-700 hover:text-indigo-800">
+                                        <h3 className="text-xl font-bold mb-2">Need Expert Help?</h3>
+                                        <p className="text-indigo-100 text-base mb-6">Connect with our agricultural scientists for personalized advice.</p>
+                                        <Button variant="secondary" className="w-full font-semibold text-indigo-700 hover:text-indigo-800 h-11 text-base">
                                             Call Support
                                         </Button>
                                     </CardContent>
