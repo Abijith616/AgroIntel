@@ -80,7 +80,7 @@ const problems = [
 
 const features = [
     { icon: TrendingUp, title: "Market Arbitrage Detection", description: "Automatically find price differences across markets to maximize profit margins." },
-    { icon: Zap, title: "Real-time Price Intelligence", description: "Live mandi prices updated continuously from 100+ markets nationwide." },
+    { icon: Zap, title: "Real-time Price Intelligence", description: "Live market prices updated continuously from 100+ markets nationwide." },
     { icon: CloudSun, title: "Climate Risk Alerts", description: "Hyperlocal weather forecasts and crop-specific risk warnings." },
     { icon: FileCheck, title: "Auto-matched Government Schemes", description: "Never miss applicable subsidies, loans, or support programs." },
     { icon: Warehouse, title: "Storage Strategy Optimization", description: "AI recommendations on when to hold vs. sell based on price trends." },
@@ -98,8 +98,8 @@ const modules: any[] = [
         icon: TrendingUp,
         color: "text-primary",
         bgColor: "bg-primary/10",
-        features: ["Real-time price tracking across 100+ mandis", "Arbitrage alerts when price gaps exceed thresholds", "Historical price trends and seasonal patterns", "Best buyer recommendations by location"],
-        mockup: { title: "Price Arbitrage Detected", data: [{ market: "Delhi Azadpur", price: "₹3,250/qtl", diff: "+₹0" }, { market: "Jaipur Mandi", price: "₹3,050/qtl", diff: "-₹200" }, { market: "Lucknow", price: "₹2,890/qtl", diff: "-₹360" }] },
+        features: ["Real-time price tracking across 100+ markets", "Arbitrage alerts when price gaps exceed thresholds", "Historical price trends and seasonal patterns", "Best buyer recommendations by location"],
+        mockup: { title: "Price Arbitrage Detected", data: [{ market: "Delhi Azadpur", price: "₹3,250/qtl", diff: "+₹0" }, { market: "Jaipur Market", price: "₹3,050/qtl", diff: "-₹200" }, { market: "Lucknow", price: "₹2,890/qtl", diff: "-₹360" }] },
     },
     {
         id: "expert",

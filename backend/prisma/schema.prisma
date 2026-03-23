@@ -20,6 +20,7 @@ model User {
   updatedAt     DateTime        @updatedAt
   passwordReset PasswordReset[]
   crops         Crop[]
+  expenses      Expense[]
 }
 
 model PasswordReset {
@@ -34,8 +35,8 @@ model PasswordReset {
 
 
 model Crop {
-  id         Int      @id @default(autoincrement())
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         Int       @id @default(autoincrement())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     Int
   name       String
   landVolume Float
@@ -45,8 +46,23 @@ model Crop {
   state      String
   district   String
   place      String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  expenses   Expense[]
+}
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int
+  crop        Crop?    @relation(fields: [cropId], references: [id], onDelete: SetNull)
+  cropId      Int?
+  category    String   // Seeds, Fertilizer, Labor, Irrigation, Pesticides, Equipment, Other
+  amount      Float
+  description String
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Scheme {
