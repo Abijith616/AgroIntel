@@ -19,6 +19,8 @@ import weatherRoutes from './routes/weather.routes';
 import marketRoutes from './routes/market.routes';
 import aiReportRoutes from './routes/ai-report.routes';
 import expenseRoutes from './routes/expense.routes';
+import plantHealthRoutes from './routes/plant-health.routes';
+import marketOpportunitiesRoutes from './routes/market-opportunities.routes';
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -28,6 +30,8 @@ app.use('/api/weather', weatherRoutes);
 app.use('/api/market', marketRoutes);
 app.use('/api/ai-report', aiReportRoutes);
 app.use('/api/expenses', expenseRoutes);
+app.use('/api/plant-health', plantHealthRoutes);
+app.use('/api/market-opportunities', marketOpportunitiesRoutes);
 
 app.get('/', (req: Request, res: Response) => {
     res.json({ message: 'Welcome to AgroIntel API' });

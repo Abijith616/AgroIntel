@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import {
     Leaf, LogOut, Sprout, TrendingUp, BarChart3,
-    Download, Warehouse, Phone,
+    Download, Phone,
     AlertTriangle, ArrowDownRight, FileText, Landmark,
     Pencil, Trash2, Brain, Sparkles
 } from "lucide-react";
@@ -29,6 +29,16 @@ export default function Dashboard() {
 
     const [crops, setCrops] = useState<any[]>([]);
     const [showExpenseModal, setShowExpenseModal] = useState(false);
+    const [marketOpportunity, setMarketOpportunity] = useState<{
+        bestName: string;
+        bestState: string;
+        priceGapPercent: number;
+        netGain: number;
+        profitPotential: string;
+        localPrice: number;
+        trend: number;
+    } | null>(null);
+    const [moLoading, setMoLoading] = useState(false);
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
@@ -59,6 +69,39 @@ export default function Dashboard() {
             fetchCrops();
         }
     }, [navigate]);
+
+    // Fetch market opportunity once we have crops
+    useEffect(() => {
+        if (crops.length === 0) return;
+        const crop = crops[0];
+        const fetchMO = async () => {
+            setMoLoading(true);
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(
+                    `http://localhost:3000/api/market-opportunities?crop=${encodeURIComponent(crop.name)}&state=${encodeURIComponent(crop.state)}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                if (!res.ok) return;
+                const data = await res.json();
+                const best = data.topOpportunities?.find((o: any) => o.netGain > 0) ?? data.topOpportunities?.[0];
+                if (best) {
+                    setMarketOpportunity({
+                        bestName: best.name,
+                        bestState: best.state,
+                        priceGapPercent: best.priceGapPercent,
+                        netGain: best.netGain,
+                        profitPotential: best.profitPotential,
+                        localPrice: data.localMarket?.price ?? 0,
+                        trend: best.trend,
+                    });
+                }
+            } catch { /* silent fail */ } finally {
+                setMoLoading(false);
+            }
+        };
+        fetchMO();
+    }, [crops]);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -153,31 +196,76 @@ export default function Dashboard() {
                                 <WeatherWidget lat={coords.lat} lon={coords.lon} cropName={cropName} />
                             </motion.div>
                             <motion.div variants={item}>
-                                <Card className="shadow-sm">
+                                <Card
+                                    className="shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                                    onClick={() => navigate(`/market-opportunities?crop=${encodeURIComponent(firstCrop?.name || 'Rice')}&state=${encodeURIComponent(firstCrop?.state || 'Kerala')}`)}
+                                >
                                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                         <CardTitle className="text-base font-medium">Market Opportunities</CardTitle>
                                         <TrendingUp className="h-5 w-5 text-primary" />
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-3xl font-bold">High Demand</div>
-                                        <p className="text-sm text-muted-foreground mt-1">Wheat prices up by 5% in local markets.</p>
-                                        <Badge variant="secondary" className="mt-2 bg-primary/10 text-primary hover:bg-primary/20">Sell Recommended</Badge>
+                                        {moLoading ? (
+                                            <>
+                                                <div className="h-8 w-32 bg-muted animate-pulse rounded mb-2" />
+                                                <div className="h-4 w-48 bg-muted animate-pulse rounded mb-2" />
+                                                <div className="h-5 w-24 bg-muted animate-pulse rounded" />
+                                            </>
+                                        ) : marketOpportunity ? (
+                                            <>
+                                                <div className="text-2xl font-bold leading-tight">
+                                                    {marketOpportunity.priceGapPercent > 0 ? `+${marketOpportunity.priceGapPercent}%` : `${marketOpportunity.priceGapPercent}%`}
+                                                </div>
+                                                <p className="text-sm text-muted-foreground mt-1">
+                                                    {marketOpportunity.bestName}, {marketOpportunity.bestState}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground mt-0.5">
+                                                    {marketOpportunity.netGain > 0
+                                                        ? `Net gain ~₹${marketOpportunity.netGain}/qt after transport`
+                                                        : `Below transport breakeven — check other markets`}
+                                                </p>
+                                                <Badge
+                                                    variant="secondary"
+                                                    className={`mt-2 text-xs font-semibold border ${marketOpportunity.profitPotential === 'High'
+                                                            ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                                                            : marketOpportunity.profitPotential === 'Medium'
+                                                                ? 'bg-amber-100 text-amber-700 border-amber-200'
+                                                                : 'bg-red-100 text-red-600 border-red-200'
+                                                        }`}
+                                                >
+                                                    {marketOpportunity.profitPotential === 'High' ? '🔥 High Potential' :
+                                                        marketOpportunity.profitPotential === 'Medium' ? '📊 Medium Potential' :
+                                                            '⚠ Low Potential'}
+                                                </Badge>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="text-2xl font-bold">No Data</div>
+                                                <p className="text-sm text-muted-foreground mt-1">Add crops to see opportunities</p>
+                                            </>
+                                        )}
                                     </CardContent>
                                 </Card>
                             </motion.div>
                             <motion.div variants={item}>
-                                <Card className="shadow-sm">
+                                <Card
+                                    className="shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                                    onClick={() => navigate('/plant-health')}
+                                >
                                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-base font-medium">Storage Status</CardTitle>
-                                        <Warehouse className="h-5 w-5 text-blue-500" />
+                                        <CardTitle className="text-base font-medium">Plant Health</CardTitle>
+                                        <Leaf className="h-5 w-5 text-emerald-600" />
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-3xl font-bold">85% Full</div>
-                                        <p className="text-sm text-muted-foreground mt-1">Silo A needs maintenance check.</p>
-                                        <p className="text-sm text-blue-600 font-medium mt-2 cursor-pointer hover:underline">View Strategy &gt;</p>
+                                        <div className="text-3xl font-bold">
+                                            {crops.length} {crops.length === 1 ? 'Crop' : 'Crops'}
+                                        </div>
+                                        <p className="text-sm text-muted-foreground mt-1">AI-powered health tips for your crops.</p>
+                                        <p className="text-sm text-emerald-600 font-medium mt-2">View Health Report →</p>
                                     </CardContent>
                                 </Card>
                             </motion.div>
+
                             <motion.div variants={item}>
                                 <MarketPriceWidget
                                     cropName={firstCrop?.name || 'Rice'}

@@ -92,7 +92,7 @@ const DEMAND_EL: Record<string, React.ReactElement> = {
 // ─── Loading ──────────────────────────────────────────────────────────────────
 
 const STEPS = [
-    "Connecting to Groq AI …",
+    "Connecting to AgroIntel AI …",
     "Searching live market data …",
     "Analyzing global commodity trends …",
     "Evaluating your crops …",
@@ -132,7 +132,7 @@ function LoadingScreen() {
                     </div>
                 ))}
             </div>
-            <p className="text-slate-500 text-base">This may take 15–30 seconds. Powered by Groq AI.</p>
+            <p className="text-slate-500 text-base">This may take 15–30 seconds. Powered by AgroIntel AI.</p>
         </div>
     );
 }

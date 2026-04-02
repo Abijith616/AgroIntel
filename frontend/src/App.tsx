@@ -12,6 +12,9 @@ import MarketPrices from "./MarketPrices";
 import MarketAIReport from "./MarketAIReport";
 import ExportOpportunities from "./ExportOpportunities";
 import MonthlyReport from "./MonthlyReport";
+import PlantHealth from "./PlantHealth";
+import PlantHealthList from "./PlantHealthList";
+import MarketOpportunities from "./MarketOpportunities";
 
 function App() {
     return (
@@ -30,6 +33,9 @@ function App() {
                 <Route path="/market-report" element={<MarketAIReport />} />
                 <Route path="/export-opportunities" element={<ExportOpportunities />} />
                 <Route path="/monthly-report" element={<MonthlyReport />} />
+                <Route path="/plant-health" element={<PlantHealthList />} />
+                <Route path="/plant-health/:cropId" element={<PlantHealth />} />
+                <Route path="/market-opportunities" element={<MarketOpportunities />} />
             </Routes>
         </Router>
     );
