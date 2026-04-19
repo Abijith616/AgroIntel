@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
     ArrowLeft, TrendingUp, TrendingDown, Minus,
     MapPin, Truck, Sparkles, Leaf, DollarSign,
-    BarChart3, AlertCircle, RefreshCw, Star
+    BarChart3, AlertCircle, RefreshCw, Star, Wheat
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -80,9 +80,32 @@ export default function MarketOpportunities() {
     const [error, setError] = useState<string | null>(null);
     const [filter, setFilter] = useState<"All" | "High" | "Medium" | "Low">("All");
 
-    // Crop info from URL params (passed by dashboard)
-    const crop = searchParams.get("crop") || "Rice";
-    const state = searchParams.get("state") || "Kerala";
+    // All user crops for the filter tabs
+    const [userCrops, setUserCrops] = useState<{ id: number; name: string; state: string; district: string }[]>([]);
+
+    // Active crop for market data (starts from URL param)
+    const initialCrop = searchParams.get("crop") || "Rice";
+    const initialState = searchParams.get("state") || "Kerala";
+    const [activeCrop, setActiveCrop] = useState(initialCrop);
+    const [activeCropState, setActiveCropState] = useState(initialState);
+
+    // Fetch all user crops once
+    useEffect(() => {
+        const load = async () => {
+            const token = localStorage.getItem("token");
+            try {
+                const res = await fetch("http://localhost:3000/api/crops", {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (res.ok) setUserCrops(await res.json());
+            } catch { /* silent */ }
+        };
+        load();
+    }, []);
+
+    // backwards compat: keep crop / state as derived from active
+    const crop = activeCrop;
+    const state = activeCropState;
 
     const fetchData = async () => {
         setLoading(true);
@@ -90,7 +113,7 @@ export default function MarketOpportunities() {
         try {
             const token = localStorage.getItem("token");
             const res = await fetch(
-                `http://localhost:3000/api/market-opportunities?crop=${encodeURIComponent(crop)}&state=${encodeURIComponent(state)}`,
+                `http://localhost:3000/api/market-opportunities?crop=${encodeURIComponent(activeCrop)}&state=${encodeURIComponent(activeCropState)}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             if (!res.ok) throw new Error("Failed to fetch");
@@ -103,7 +126,7 @@ export default function MarketOpportunities() {
         }
     };
 
-    useEffect(() => { fetchData(); }, [crop, state]);
+    useEffect(() => { fetchData(); }, [activeCrop, activeCropState]);
 
     const filtered = data?.topOpportunities.filter(o =>
         filter === "All" ? true : o.profitPotential === filter
@@ -112,25 +135,52 @@ export default function MarketOpportunities() {
     return (
         <div className="min-h-screen bg-muted/30">
             {/* Header */}
-            <header className="bg-background/80 backdrop-blur-md border-b px-6 md:px-10 py-5 flex items-center gap-4 sticky top-0 z-50">
-                <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
-                    <ArrowLeft className="h-5 w-5" />
-                </Button>
-                <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-                        <Leaf className="h-5 w-5" />
-                    </div>
-                    <div>
-                        <h1 className="text-xl font-bold leading-none">Market Opportunities</h1>
-                        <p className="text-sm text-muted-foreground mt-0.5">Find the most profitable markets for your <span className="font-semibold text-foreground">{crop}</span></p>
-                    </div>
-                </div>
-                <div className="ml-auto">
-                    <Button variant="outline" size="sm" onClick={fetchData} disabled={loading} className="gap-2">
-                        <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-                        Refresh
+            <header className="bg-background/80 backdrop-blur-md border-b px-6 md:px-10 py-5 sticky top-0 z-50">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
+                        <ArrowLeft className="h-5 w-5" />
                     </Button>
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+                            <Leaf className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-bold leading-none">Market Opportunities</h1>
+                            <p className="text-sm text-muted-foreground mt-0.5">Find the most profitable markets for your <span className="font-semibold text-foreground">{activeCrop}</span></p>
+                        </div>
+                    </div>
+                    <div className="ml-auto">
+                        <Button variant="outline" size="sm" onClick={fetchData} disabled={loading} className="gap-2">
+                            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                            Refresh
+                        </Button>
+                    </div>
                 </div>
+
+                {/* Crop filter tabs */}
+                {userCrops.length > 0 && (
+                    <div className="flex items-center gap-2 mt-4 overflow-x-auto pb-1">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide shrink-0 mr-1">Filter by crop:</span>
+                        {userCrops.map(c => (
+                            <button
+                                key={c.id}
+                                onClick={() => {
+                                    setActiveCrop(c.name);
+                                    setActiveCropState(c.state);
+                                    setFilter("All");
+                                }}
+                                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full border text-sm font-semibold transition-all shrink-0 ${activeCrop === c.name
+                                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                                        : "bg-background text-foreground border-border hover:border-primary/50 hover:bg-muted/40"
+                                    }`}
+                            >
+                                <Wheat className="h-3.5 w-3.5" />
+                                {c.name}
+                                <span className="text-xs opacity-70 font-normal">({c.state})</span>
+                            </button>
+                        ))}
+                    </div>
+                )}
             </header>
 
             <main className="p-6 md:p-10 max-w-6xl mx-auto space-y-8">
@@ -200,6 +250,32 @@ export default function MarketOpportunities() {
                                 </div>
                             </motion.div>
                         )}
+
+                        {/* Export Opportunities Hub card */}
+                        <motion.div variants={item}>
+                            <button
+                                onClick={() => navigate(`/export-opportunities`)}
+                                className="w-full text-left group"
+                            >
+                                <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-200 hover:border-emerald-400 rounded-2xl p-5 flex items-center justify-between gap-4 shadow-sm hover:shadow-md transition-all duration-200">
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-12 w-12 rounded-xl bg-emerald-500 flex items-center justify-center shadow-md shrink-0">
+                                            <Truck className="h-6 w-6 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-base text-emerald-900">All Export Opportunities</p>
+                                            <p className="text-sm text-emerald-700 mt-0.5">
+                                                Live weather alerts + verified exporters &amp; trade partners for <span className="font-semibold">{crop}</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-emerald-600 font-semibold text-sm group-hover:gap-3 transition-all">
+                                        Open Hub <TrendingUp className="h-4 w-4" />
+                                    </div>
+                                </div>
+                            </button>
+                        </motion.div>
+
 
                         {/* Best Opportunity Highlight */}
                         {data.bestOpportunity && data.bestOpportunity.netGain > 0 && (

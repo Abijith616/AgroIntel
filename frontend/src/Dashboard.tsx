@@ -4,14 +4,13 @@ import {
     Leaf, LogOut, Sprout, TrendingUp, BarChart3,
     Download, Phone,
     AlertTriangle, ArrowDownRight, FileText, Landmark,
-    Pencil, Trash2, Brain, Sparkles
+    Pencil, Trash2, Brain, Sparkles, BarChart2, MapPin, TrendingDown
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { WeatherWidget } from "@/components/WeatherWidget";
-import { MarketPriceWidget } from "@/components/MarketPriceWidget";
 import { MarketIntelligenceChart } from "@/components/MarketIntelligenceChart";
 import RecordExpenseModal from "@/components/RecordExpenseModal";
 
@@ -36,6 +35,7 @@ export default function Dashboard() {
         netGain: number;
         profitPotential: string;
         localPrice: number;
+        livePrice: number;
         trend: number;
     } | null>(null);
     const [moLoading, setMoLoading] = useState(false);
@@ -85,6 +85,18 @@ export default function Dashboard() {
                 if (!res.ok) return;
                 const data = await res.json();
                 const best = data.topOpportunities?.find((o: any) => o.netGain > 0) ?? data.topOpportunities?.[0];
+                // Also fetch live price
+                let livePrice = 0;
+                try {
+                    const priceRes = await fetch(
+                        `http://localhost:3000/api/market/prices?crop=${encodeURIComponent(crop.name)}&state=${encodeURIComponent(crop.state)}`,
+                        { headers: { Authorization: `Bearer ${token}` } }
+                    );
+                    if (priceRes.ok) {
+                        const pd = await priceRes.json();
+                        livePrice = pd.nearestMarket?.price ?? 0;
+                    }
+                } catch { /* silent */ }
                 if (best) {
                     setMarketOpportunity({
                         bestName: best.name,
@@ -93,6 +105,7 @@ export default function Dashboard() {
                         netGain: best.netGain,
                         profitPotential: best.profitPotential,
                         localPrice: data.localMarket?.price ?? 0,
+                        livePrice,
                         trend: best.trend,
                     });
                 }
@@ -190,18 +203,20 @@ export default function Dashboard() {
                             </div>
                         </div>
 
-                        {/* Top Stats Row */}
+                        {/* Top Stats Row: 4 cards */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             <motion.div variants={item}>
                                 <WeatherWidget lat={coords.lat} lon={coords.lon} cropName={cropName} />
                             </motion.div>
+
+                            {/* Merged: Market Opportunities + Live Price */}
                             <motion.div variants={item}>
                                 <Card
                                     className="shadow-sm cursor-pointer hover:shadow-md transition-shadow"
                                     onClick={() => navigate(`/market-opportunities?crop=${encodeURIComponent(firstCrop?.name || 'Rice')}&state=${encodeURIComponent(firstCrop?.state || 'Kerala')}`)}
                                 >
                                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-base font-medium">Market Opportunities</CardTitle>
+                                        <CardTitle className="text-base font-medium">Market Intel</CardTitle>
                                         <TrendingUp className="h-5 w-5 text-primary" />
                                     </CardHeader>
                                     <CardContent>
@@ -213,24 +228,37 @@ export default function Dashboard() {
                                             </>
                                         ) : marketOpportunity ? (
                                             <>
-                                                <div className="text-2xl font-bold leading-tight">
-                                                    {marketOpportunity.priceGapPercent > 0 ? `+${marketOpportunity.priceGapPercent}%` : `${marketOpportunity.priceGapPercent}%`}
+                                                {/* Live price row */}
+                                                <div className="flex items-baseline gap-1.5 mb-1">
+                                                    <span className="text-2xl font-bold">
+                                                        {marketOpportunity.livePrice > 0 ? `₹${marketOpportunity.livePrice.toLocaleString('en-IN')}` : `+${marketOpportunity.priceGapPercent}%`}
+                                                    </span>
+                                                    {marketOpportunity.livePrice > 0 && <span className="text-sm text-muted-foreground">/qt</span>}
                                                 </div>
-                                                <p className="text-sm text-muted-foreground mt-1">
-                                                    {marketOpportunity.bestName}, {marketOpportunity.bestState}
+                                                {/* Trend */}
+                                                {marketOpportunity.trend !== 0 && (
+                                                    <div className={`flex items-center gap-1 text-xs font-medium mb-1 ${marketOpportunity.trend > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                                        {marketOpportunity.trend > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                                                        {marketOpportunity.trend > 0 ? '+' : ''}{marketOpportunity.trend}% vs yesterday
+                                                    </div>
+                                                )}
+                                                {/* Best opportunity */}
+                                                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                                    <MapPin className="h-3 w-3" />
+                                                    Best: {marketOpportunity.bestName}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground mt-0.5">
                                                     {marketOpportunity.netGain > 0
-                                                        ? `Net gain ~₹${marketOpportunity.netGain}/qt after transport`
-                                                        : `Below transport breakeven — check other markets`}
+                                                        ? `Net gain ~₹${marketOpportunity.netGain}/qt vs local`
+                                                        : 'Check market for best price'}
                                                 </p>
                                                 <Badge
                                                     variant="secondary"
                                                     className={`mt-2 text-xs font-semibold border ${marketOpportunity.profitPotential === 'High'
-                                                            ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-                                                            : marketOpportunity.profitPotential === 'Medium'
-                                                                ? 'bg-amber-100 text-amber-700 border-amber-200'
-                                                                : 'bg-red-100 text-red-600 border-red-200'
+                                                        ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                                                        : marketOpportunity.profitPotential === 'Medium'
+                                                            ? 'bg-amber-100 text-amber-700 border-amber-200'
+                                                            : 'bg-red-100 text-red-600 border-red-200'
                                                         }`}
                                                 >
                                                     {marketOpportunity.profitPotential === 'High' ? '🔥 High Potential' :
@@ -241,12 +269,13 @@ export default function Dashboard() {
                                         ) : (
                                             <>
                                                 <div className="text-2xl font-bold">No Data</div>
-                                                <p className="text-sm text-muted-foreground mt-1">Add crops to see opportunities</p>
+                                                <p className="text-sm text-muted-foreground mt-1">Add crops to see market data</p>
                                             </>
                                         )}
                                     </CardContent>
                                 </Card>
                             </motion.div>
+
                             <motion.div variants={item}>
                                 <Card
                                     className="shadow-sm cursor-pointer hover:shadow-md transition-shadow"
@@ -266,13 +295,26 @@ export default function Dashboard() {
                                 </Card>
                             </motion.div>
 
+                            {/* Yield Forecast Card */}
                             <motion.div variants={item}>
-                                <MarketPriceWidget
-                                    cropName={firstCrop?.name || 'Rice'}
-                                    state={firstCrop?.state || 'Kerala'}
-                                    district={firstCrop?.district}
-                                />
+                                <Card
+                                    className="shadow-sm cursor-pointer hover:shadow-md transition-shadow border-primary/20 bg-gradient-to-br from-teal-50/60 via-transparent to-emerald-50/40"
+                                    onClick={() => navigate('/yield-forecast')}
+                                >
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-base font-medium">Yield Forecast</CardTitle>
+                                        <BarChart2 className="h-5 w-5 text-teal-600" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-3xl font-bold text-teal-700">
+                                            {crops.length} {crops.length === 1 ? 'Crop' : 'Crops'}
+                                        </div>
+                                        <p className="text-sm text-muted-foreground mt-1">Predict revenue based on crop, market &amp; strategy.</p>
+                                        <p className="text-sm text-teal-600 font-medium mt-2">Calculate Yield →</p>
+                                    </CardContent>
+                                </Card>
                             </motion.div>
+
                         </div>
 
                         {/* Main Content Grid */}

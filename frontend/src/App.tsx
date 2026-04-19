@@ -15,6 +15,7 @@ import MonthlyReport from "./MonthlyReport";
 import PlantHealth from "./PlantHealth";
 import PlantHealthList from "./PlantHealthList";
 import MarketOpportunities from "./MarketOpportunities";
+import YieldForecast from "./YieldForecast";
 
 function App() {
     return (
@@ -36,6 +37,7 @@ function App() {
                 <Route path="/plant-health" element={<PlantHealthList />} />
                 <Route path="/plant-health/:cropId" element={<PlantHealth />} />
                 <Route path="/market-opportunities" element={<MarketOpportunities />} />
+                <Route path="/yield-forecast" element={<YieldForecast />} />
             </Routes>
         </Router>
     );
