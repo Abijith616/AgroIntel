@@ -1,7 +1,5 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../prisma';
 
 interface AuthenticatedRequest extends Request {
     user?: { userId: number };
@@ -77,7 +75,8 @@ export const getExpenses = async (req: AuthenticatedRequest, res: Response) => {
 export const deleteExpense = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const userId = req.user?.userId;
-        const expenseId = parseInt(req.params.id);
+        const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+        const expenseId = parseInt(rawId, 10);
         if (!userId) { res.status(401).json({ error: 'Unauthorized' }); return; }
 
         const existing = await prisma.expense.findFirst({ where: { id: expenseId, userId } });

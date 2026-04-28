@@ -345,6 +345,281 @@ export class WeatherService {
         };
     }
 
+    /**
+     * Generate detailed opportunity analysis for a specific weather-stressed region.
+     * Uses Groq AI for profit/risk/window analysis and matches real export contacts.
+     */
+    static async getOpportunityDetails(
+        region: string,
+        country: string,
+        crop: string,
+        stressType: string,
+        severity: string,
+        weatherSummary: string,
+        totalRain: number,
+        avgMaxTemp: number,
+        opportunityInsight: string,
+        farmerState: string
+    ) {
+        // ── Real contact data matched by crop/region ──────────────────────────
+        const REAL_CONTACTS: Record<string, { name: string; type: string; phone: string; email: string; website: string; location: string }[]> = {
+            // India domestic contacts
+            'India': [
+                {
+                    name: 'APEDA – Agricultural & Processed Food Export Development Authority',
+                    type: 'Government',
+                    phone: '+91-11-26534186',
+                    email: 'apeda@apeda.gov.in',
+                    website: 'https://apeda.gov.in',
+                    location: 'New Delhi, India',
+                },
+                {
+                    name: 'National Agricultural Cooperative Marketing Federation (NAFED)',
+                    type: 'Government',
+                    phone: '+91-11-26169252',
+                    email: 'nafed@nafed-india.com',
+                    website: 'https://www.nafed-india.com',
+                    location: 'New Delhi, India',
+                },
+                {
+                    name: 'Directorate General of Foreign Trade (DGFT)',
+                    type: 'Government',
+                    phone: '+91-11-23061562',
+                    email: 'dgft@nic.in',
+                    website: 'https://dgft.gov.in',
+                    location: 'New Delhi, India',
+                },
+            ],
+            'China': [
+                {
+                    name: 'China Chamber of Commerce for Import & Export of Foodstuffs (CFNA)',
+                    type: 'Trade Board',
+                    phone: '+86-10-68391447',
+                    email: 'cfna@cfna.org.cn',
+                    website: 'http://www.cfna.org.cn',
+                    location: 'Beijing, China',
+                },
+                {
+                    name: 'Ministry of Agriculture and Rural Affairs (MARA)',
+                    type: 'Government',
+                    phone: '+86-10-59193366',
+                    email: 'zfxxgk@agri.gov.cn',
+                    website: 'http://www.moa.gov.cn',
+                    location: 'Beijing, China',
+                },
+            ],
+            'Italy': [
+                {
+                    name: 'ICE – Italian Trade Agency (Agenzia ICE)',
+                    type: 'Trade Board',
+                    phone: '+39-06-59921',
+                    email: 'urp@ice.it',
+                    website: 'https://www.ice.it',
+                    location: 'Rome, Italy',
+                },
+                {
+                    name: 'Coldiretti – Italian Farmers Association',
+                    type: 'Trade Board',
+                    phone: '+39-06-48201',
+                    email: 'info@coldiretti.it',
+                    website: 'https://www.coldiretti.it',
+                    location: 'Rome, Italy',
+                },
+            ],
+            'Vietnam': [
+                {
+                    name: 'Vietnam Food Association (VFA)',
+                    type: 'Trade Board',
+                    phone: '+84-28-38297291',
+                    email: 'vfa@vietfood.org.vn',
+                    website: 'http://www.vietfood.org.vn',
+                    location: 'Ho Chi Minh City, Vietnam',
+                },
+            ],
+            'Thailand': [
+                {
+                    name: 'Thai Rice Exporters Association',
+                    type: 'Trade Board',
+                    phone: '+66-2-2174780',
+                    email: 'info@thairiceexporters.or.th',
+                    website: 'http://www.thairiceexporters.or.th',
+                    location: 'Bangkok, Thailand',
+                },
+            ],
+            'Bangladesh': [
+                {
+                    name: 'Export Promotion Bureau, Bangladesh',
+                    type: 'Government',
+                    phone: '+880-2-9550384',
+                    email: 'info@epb.gov.bd',
+                    website: 'http://www.epb.gov.bd',
+                    location: 'Dhaka, Bangladesh',
+                },
+            ],
+            'Ukraine': [
+                {
+                    name: 'Ukrainian Agribusiness Club (UCAB)',
+                    type: 'Trade Board',
+                    phone: '+380-44-2019588',
+                    email: 'office@ucab.ua',
+                    website: 'https://www.ucab.ua',
+                    location: 'Kyiv, Ukraine',
+                },
+            ],
+            'Russia': [
+                {
+                    name: 'Russian Grain Union',
+                    type: 'Trade Board',
+                    phone: '+7-495-7893131',
+                    email: 'mail@grun.ru',
+                    website: 'http://www.grun.ru',
+                    location: 'Moscow, Russia',
+                },
+            ],
+            'Australia': [
+                {
+                    name: 'GrainCorp Limited',
+                    type: 'Exporter',
+                    phone: '+61-2-92669333',
+                    email: 'enquiry@graincorp.com.au',
+                    website: 'https://www.graincorp.com.au',
+                    location: 'Sydney, Australia',
+                },
+            ],
+            'USA': [
+                {
+                    name: 'USDA Foreign Agricultural Service',
+                    type: 'Government',
+                    phone: '+1-202-7207115',
+                    email: 'info@fas.usda.gov',
+                    website: 'https://www.fas.usda.gov',
+                    location: 'Washington D.C., USA',
+                },
+            ],
+            'Brazil': [
+                {
+                    name: 'ABIOVE – Brazilian Vegetable Oil Industry Association',
+                    type: 'Trade Board',
+                    phone: '+55-11-51710500',
+                    email: 'abiove@abiove.org.br',
+                    website: 'https://www.abiove.org.br',
+                    location: 'São Paulo, Brazil',
+                },
+            ],
+            'Philippines': [
+                {
+                    name: 'Philippine Banana Growers & Exporters Association (PBGEA)',
+                    type: 'Trade Board',
+                    phone: '+63-82-2971275',
+                    email: 'pbgea@pbgea.org',
+                    website: 'http://www.pbgea.org',
+                    location: 'Davao City, Philippines',
+                },
+            ],
+            'Poland': [
+                {
+                    name: 'Polish Chamber of Food Industry and Packaging (IZPP)',
+                    type: 'Trade Board',
+                    phone: '+48-22-8292022',
+                    email: 'biuro@izpp.org.pl',
+                    website: 'https://www.izpp.org.pl',
+                    location: 'Warsaw, Poland',
+                },
+            ],
+            'Mexico': [
+                {
+                    name: 'SAGARPA – Mexican Ministry of Agriculture',
+                    type: 'Government',
+                    phone: '+52-55-38711000',
+                    email: 'contacto@sagarpa.gob.mx',
+                    website: 'https://www.gob.mx/agricultura',
+                    location: 'Mexico City, Mexico',
+                },
+            ],
+        };
+
+        // Match contacts: always include APEDA (India), then country-specific
+        const contacts = [
+            ...(REAL_CONTACTS['India'] ?? []).slice(0, 1), // APEDA always first
+            ...(REAL_CONTACTS[country] ?? []),
+        ];
+        // Deduplicate
+        const uniqueContacts = contacts.filter((c, i, arr) => arr.findIndex(x => x.name === c.name) === i);
+
+        // ── Use Groq AI for profit/risk/window analysis ────────────────────────
+        const prompt = `You are AgroIntel, an agricultural market intelligence AI.
+
+SITUATION:
+- Region: ${region} (${country})
+- Crop affected: ${crop}
+- Weather stress: ${stressType} — Severity: ${severity}
+- Weather detail: ${weatherSummary}
+- Total rainfall: ${totalRain.toFixed(1)} mm/week, Avg high: ${avgMaxTemp.toFixed(1)}°C
+- Farmer's crop: ${crop} in ${farmerState}, India
+- AI insight: ${opportunityInsight}
+
+Generate a JSON object with exactly these fields:
+1. "expectedProfit": A realistic profit estimate string for the farmer. Example: "15–25% price premium expected due to supply shortage. Estimated ₹2,000–4,000/quintal above current market rate."
+2. "risk": A risk assessment string. Example: "Medium risk — supply chain delays possible. Quality compliance for international exports requires FSSAI certification."
+3. "riskLevel": One of "Low", "Medium", "High"
+4. "closingWindow": A time-sensitive window string. Example: "Act within 7–14 days — stress impact on supply peaks in 2 weeks. Price advantage diminishes as supply normalises."
+5. "urgency": One of "Urgent", "Moderate", "Low"
+
+Base your estimates on:
+- ${stressType} severity: ${severity} (Severe = higher profit potential, higher risk)
+- International opportunities typically have higher profit but longer logistics
+- Domestic opportunities have faster turnaround but lower margins
+- Weather stress windows typically last 2-6 weeks
+
+Respond with ONLY the JSON object, no markdown, no explanation.`;
+
+        let analysis = {
+            expectedProfit: `${severity === 'Severe' ? '20–35%' : '10–20%'} price premium expected due to ${stressType.toLowerCase()} disrupting supply in ${region}.`,
+            risk: `${severity === 'Severe' ? 'High' : 'Medium'} risk — ${stressType.toLowerCase()} conditions may affect logistics and quality standards.`,
+            riskLevel: severity === 'Severe' ? 'High' : 'Medium',
+            closingWindow: `Act within ${severity === 'Severe' ? '5–10' : '10–21'} days — weather stress impact is ${severity === 'Severe' ? 'peaking now' : 'building up'}.`,
+            urgency: severity === 'Severe' ? 'Urgent' : 'Moderate',
+        };
+
+        try {
+            const raw = await callGroq([
+                { role: 'system', content: 'You are a terse agricultural market analyst. Respond ONLY with a valid JSON object. No markdown fences.' },
+                { role: 'user', content: prompt },
+            ], 400);
+
+            // Parse AI response
+            const cleaned = raw.trim().replace(/^```json?\n?/i, '').replace(/```$/i, '').trim();
+            const parsed = JSON.parse(cleaned);
+            if (parsed.expectedProfit) analysis.expectedProfit = parsed.expectedProfit;
+            if (parsed.risk) analysis.risk = parsed.risk;
+            if (parsed.riskLevel) analysis.riskLevel = parsed.riskLevel;
+            if (parsed.closingWindow) analysis.closingWindow = parsed.closingWindow;
+            if (parsed.urgency) analysis.urgency = parsed.urgency;
+        } catch (e) {
+            // Use fallback analysis (already set)
+            console.error('Groq opportunity detail fallback:', e);
+        }
+
+        return {
+            region,
+            country,
+            crop,
+            stressType,
+            severity,
+            weatherSummary,
+            totalRain,
+            avgMaxTemp,
+            opportunityInsight,
+            contacts: uniqueContacts,
+            expectedProfit: analysis.expectedProfit,
+            risk: analysis.risk,
+            riskLevel: analysis.riskLevel,
+            closingWindow: analysis.closingWindow,
+            urgency: analysis.urgency,
+            metadata: { fetchedAt: new Date().toISOString(), source: 'groq-ai + real-contacts' },
+        };
+    }
+
     // ── Legacy global insights (kept for backward compat) ──────────────────────
     static async getGlobalInsights() {
         const regions = [

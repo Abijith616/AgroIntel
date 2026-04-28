@@ -70,4 +70,43 @@ export class WeatherController {
             });
         }
     }
+
+    /**
+     * GET /api/weather/opportunity-details?region=...&country=...&crop=...&stressType=...&severity=...&weatherSummary=...&totalRain=...&avgMaxTemp=...&opportunityInsight=...&farmerState=...
+     * Returns detailed analysis with contacts, profit, risk, closing window.
+     */
+    static async getOpportunityDetails(req: Request, res: Response) {
+        try {
+            const {
+                region, country, crop, stressType, severity,
+                weatherSummary, totalRain, avgMaxTemp,
+                opportunityInsight, farmerState
+            } = req.query;
+
+            if (!region || !crop || !stressType) {
+                return res.status(400).json({ error: 'Missing required params: region, crop, stressType' });
+            }
+
+            const result = await WeatherService.getOpportunityDetails(
+                region as string,
+                (country as string) || 'India',
+                crop as string,
+                stressType as string,
+                (severity as string) || 'Moderate',
+                (weatherSummary as string) || '',
+                parseFloat((totalRain as string) || '0'),
+                parseFloat((avgMaxTemp as string) || '30'),
+                (opportunityInsight as string) || '',
+                (farmerState as string) || 'Kerala'
+            );
+
+            res.json(result);
+        } catch (error: any) {
+            console.error('Opportunity details error:', error);
+            res.status(503).json({
+                error: 'Opportunity details unavailable',
+                message: error.message || 'Failed to generate opportunity details',
+            });
+        }
+    }
 }

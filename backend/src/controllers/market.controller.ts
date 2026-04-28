@@ -42,11 +42,12 @@ export const getMarketPrices = async (req: Request, res: Response) => {
             longitude = 78.9629;
         }
 
-        const data = MarketService.getMarketPrices(cropName, latitude, longitude);
+        const stateName = (state as string) || 'Kerala';
+        const data = await MarketService.getMarketPrices(cropName, latitude, longitude, stateName);
 
         res.json({
             crop: cropName,
-            farmerLocation: { lat: latitude, lon: longitude, state: state || 'Unknown' },
+            farmerLocation: { lat: latitude, lon: longitude, state: stateName },
             ...data,
             metadata: {
                 fetchedAt: new Date().toISOString(),

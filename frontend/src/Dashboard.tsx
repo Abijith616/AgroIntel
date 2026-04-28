@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import {
     Leaf, LogOut, Sprout, TrendingUp, BarChart3,
     Download, Phone,
-    AlertTriangle, ArrowDownRight, FileText, Landmark,
-    Pencil, Trash2, Brain, Sparkles, BarChart2, MapPin, TrendingDown
+    ArrowDownRight, FileText, Landmark,
+    Pencil, Trash2, Brain, Sparkles, BarChart2, MapPin, TrendingDown,
+    ClipboardList
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
@@ -14,19 +15,20 @@ import { WeatherWidget } from "@/components/WeatherWidget";
 import { MarketIntelligenceChart } from "@/components/MarketIntelligenceChart";
 import RecordExpenseModal from "@/components/RecordExpenseModal";
 
-// Simple coordinate mapping for demo
-const LOCATION_COORDS: Record<string, { lat: number, lon: number }> = {
-    'Kerala': { lat: 9.9312, lon: 76.2673 },
-    'Punjab': { lat: 31.1471, lon: 75.3412 },
-    'Maharashtra': { lat: 19.7515, lon: 75.7139 },
-    // Add more as needed
-};
+export interface Task {
+    id: string;
+    title: string;
+    subtitle: string;
+    timestamp: number;
+    completed: boolean;
+}
 
 export default function Dashboard() {
     const navigate = useNavigate();
     const [user, setUser] = useState<{ username: string, email: string } | null>(null);
 
     const [crops, setCrops] = useState<any[]>([]);
+    const [tasks, setTasks] = useState<Task[]>([]);
     const [showExpenseModal, setShowExpenseModal] = useState(false);
     const [marketOpportunity, setMarketOpportunity] = useState<{
         bestName: string;
@@ -68,18 +70,29 @@ export default function Dashboard() {
         if (storedUser) {
             fetchCrops();
         }
+
+        // Load tasks
+        const storedTasks = localStorage.getItem('agrointel_tasks');
+        if (storedTasks) {
+            try {
+                setTasks(JSON.parse(storedTasks));
+            } catch (e) {
+                console.error("Failed to parse tasks", e);
+            }
+        }
     }, [navigate]);
 
     // Fetch market opportunity once we have crops
     useEffect(() => {
         if (crops.length === 0) return;
         const crop = crops[0];
+        if (!crop.latitude || !crop.longitude) return;
         const fetchMO = async () => {
             setMoLoading(true);
             try {
                 const token = localStorage.getItem('token');
                 const res = await fetch(
-                    `http://localhost:3000/api/market-opportunities?crop=${encodeURIComponent(crop.name)}&state=${encodeURIComponent(crop.state)}`,
+                    `http://localhost:3000/api/market-opportunities?crop=${encodeURIComponent(crop.name)}&state=${encodeURIComponent(crop.state)}&district=${encodeURIComponent(crop.district || '')}&place=${encodeURIComponent(crop.place || '')}&lat=${encodeURIComponent(String(crop.latitude))}&lon=${encodeURIComponent(String(crop.longitude))}`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 if (!res.ok) return;
@@ -144,7 +157,9 @@ export default function Dashboard() {
 
     // Determine location from first crop
     const firstCrop = crops[0];
-    const coords = firstCrop ? (LOCATION_COORDS[firstCrop.state] || { lat: 9.9312, lon: 76.2673 }) : { lat: 9.9312, lon: 76.2673 };
+    const coords = firstCrop?.latitude && firstCrop?.longitude
+        ? { lat: firstCrop.latitude, lon: firstCrop.longitude }
+        : { lat: 9.9312, lon: 76.2673 };
     const cropName = firstCrop ? firstCrop.name : 'Rice';
 
     const container = {
@@ -213,7 +228,7 @@ export default function Dashboard() {
                             <motion.div variants={item}>
                                 <Card
                                     className="shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                                    onClick={() => navigate(`/market-opportunities?crop=${encodeURIComponent(firstCrop?.name || 'Rice')}&state=${encodeURIComponent(firstCrop?.state || 'Kerala')}`)}
+                                    onClick={() => navigate(`/market-opportunities?cropId=${encodeURIComponent(String(firstCrop?.id || ''))}`)}
                                 >
                                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                         <CardTitle className="text-base font-medium">Market Intel</CardTitle>
@@ -370,7 +385,10 @@ export default function Dashboard() {
 
                                 {/* Market Intelligence */}
                                 <motion.div variants={item}>
-                                    <Card className="shadow-sm">
+                                    <Card
+                                        className="shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                                        onClick={() => navigate('/market-intelligence', { state: { crop: firstCrop?.name, state: firstCrop?.state, district: firstCrop?.district } })}
+                                    >
                                         <CardHeader>
                                             <CardTitle className="flex items-center gap-3 text-2xl">
                                                 <BarChart3 className="h-6 w-6 text-blue-600" />
@@ -387,7 +405,7 @@ export default function Dashboard() {
                                             />
                                             {/* AI Report CTA */}
                                             <button
-                                                onClick={() => navigate('/market-report')}
+                                                onClick={(e) => { e.stopPropagation(); navigate('/market-report'); }}
                                                 className="mt-5 w-full flex items-center justify-between px-5 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg group"
                                             >
                                                 <div className="flex items-center gap-3">
@@ -430,7 +448,7 @@ export default function Dashboard() {
 
                                 {/* Government Schemes */}
                                 <motion.div variants={item}>
-                                    <Card className="bg-orange-50/50 border-orange-100 shadow-sm">
+                                    <Card className="bg-orange-50/50 border-orange-100 shadow-sm cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/schemes')}>
                                         <CardHeader className="pb-4">
                                             <CardTitle className="flex items-center gap-3 text-lg">
                                                 <Landmark className="h-5 w-5 text-orange-600" />
@@ -443,38 +461,34 @@ export default function Dashboard() {
                                                     <h4 className="font-semibold text-base text-foreground">PM-KISAN Samman Nidhi</h4>
                                                     <p className="text-sm text-muted-foreground mt-1">Next installment of ₹2,000 due next month. Check eligibility.</p>
                                                 </div>
-                                                <Button variant="link" className="p-0 h-auto text-sm text-orange-600 font-medium" onClick={() => navigate('/schemes')}>
-                                                    View All Active Schemes &rarr;
-                                                </Button>
                                             </div>
                                         </CardContent>
                                     </Card>
                                 </motion.div>
 
-                                {/* Recent Alerts */}
+                                {/* Task Panel */}
                                 <motion.div variants={item}>
-                                    <Card className="shadow-sm">
-                                        <CardHeader>
+                                    <Card className="shadow-sm cursor-pointer hover:shadow-md transition-shadow border-indigo-100 bg-indigo-50/30" onClick={() => navigate('/tasks')}>
+                                        <CardHeader className="pb-4">
                                             <CardTitle className="flex items-center gap-3 text-lg">
-                                                <AlertTriangle className="h-5 w-5 text-orange-500" />
-                                                Recent Alerts
+                                                <ClipboardList className="h-5 w-5 text-indigo-600" />
+                                                Task Panel
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent>
-                                            <div className="space-y-5">
-                                                <div className="pb-5 border-b last:border-0 last:pb-0">
-                                                    <div className="flex justify-between items-start mb-1">
-                                                        <h4 className="text-base font-medium text-orange-700">Pest Alert</h4>
-                                                        <span className="text-xs text-muted-foreground">2h ago</span>
+                                            <div className="space-y-4">
+                                                <div className="p-4 bg-white rounded-lg border border-indigo-100 shadow-sm flex items-center justify-between">
+                                                    <div>
+                                                        <h4 className="font-bold text-base text-indigo-950 flex items-center gap-2">
+                                                            {tasks.filter(t => !t.completed).length} Pending Tasks
+                                                        </h4>
+                                                        <p className="text-sm text-muted-foreground mt-1">
+                                                            {tasks.length} total tasks saved. Click to view and manage your opportunities.
+                                                        </p>
                                                     </div>
-                                                    <p className="text-sm text-muted-foreground">High probability of aphid attack in Wheat due to rising humidity.</p>
-                                                </div>
-                                                <div className="pb-5 border-b last:border-0 last:pb-0">
-                                                    <div className="flex justify-between items-start mb-1">
-                                                        <h4 className="text-base font-medium text-blue-700">Irrigation</h4>
-                                                        <span className="text-xs text-muted-foreground">Yesterday</span>
+                                                    <div className="h-10 w-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center shrink-0">
+                                                        <ArrowDownRight className="h-5 w-5 -rotate-90" />
                                                     </div>
-                                                    <p className="text-sm text-muted-foreground">Time to irrigate Mustard fields for optimal pod formation.</p>
                                                 </div>
                                             </div>
                                         </CardContent>

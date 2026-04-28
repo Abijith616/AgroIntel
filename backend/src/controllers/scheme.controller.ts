@@ -1,7 +1,5 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../prisma';
 
 export const getAllSchemes = async (req: Request, res: Response) => {
     try {
@@ -28,12 +26,12 @@ export const getMatchingSchemes = async (req: Request, res: Response) => {
         const matchedSchemes = allSchemes.filter(scheme => {
             if (scheme.applicableCrops.toLowerCase() === 'all') return true;
 
-            const applicableCropsList = scheme.applicableCrops.split(',').map(s => s.trim().toLowerCase());
+            const applicableCropsList = scheme.applicableCrops.split(',').map((s: string) => s.trim().toLowerCase());
 
             // Check if any of the user's crops match the applicable crops
             return userCrops.some(userCrop => {
                 const userCropName = userCrop.name.toLowerCase();
-                return applicableCropsList.some(appCrop => userCropName.includes(appCrop) || appCrop.includes(userCropName));
+                return applicableCropsList.some((appCrop: string) => userCropName.includes(appCrop) || appCrop.includes(userCropName));
             });
         });
 

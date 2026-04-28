@@ -70,12 +70,12 @@ export interface AIReport {
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-// Model order: groq/compound has web search; llama is the high-RPM fallback
-const MODELS = ['groq/compound', 'llama-3.3-70b-versatile'];
+// We use llama-3.3-70b-versatile as it has a large context limit 
+const MODELS = ['llama-3.3-70b-versatile'];
 
 async function callGroq(
     messages: { role: string; content: string }[],
-    maxTokens = 3000,
+    maxTokens = 1500, // Reduced from 3000 to avoid "Request Entity Too Large" errors
     attempt = 0
 ): Promise<string> {
     const apiKey = process.env.GROQ_API_KEY;
@@ -157,7 +157,7 @@ JSON schema:
   "keyRisks": ["risk 1", "risk 2", "risk 3"],
   "weatherAdvisory": "Short weather/climate note for their region this season",
   "generatedAt": "",
-  "dataSource": "Groq AI + Web Search (Live)"
+  "dataSource": "Groq AI (LLaMA 3.3 70B)"
 }`;
 
     const user = `FARMER: ${req.farmerDistrict}, ${req.farmerState} | Date: ${req.currentDate}
@@ -176,7 +176,7 @@ Search the web for current Indian market prices and trends, then generate the JS
 
 export async function generateAIReport(req: AIReportRequest): Promise<AIReport> {
     const messages = buildMessages(req);
-    const raw = await callGroq(messages, 3000);
+    const raw = await callGroq(messages, 1500);
 
     // Strip markdown fences if model wrapped in them
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
@@ -184,7 +184,7 @@ export async function generateAIReport(req: AIReportRequest): Promise<AIReport> 
 
     const report: AIReport = JSON.parse(jsonMatch[0]);
     report.generatedAt = new Date().toISOString();
-    if (!report.dataSource) {
+    if (!report.dataSource || !report.dataSource.includes('Groq')) {
         report.dataSource = 'Groq AI (LLaMA 3.3 70B) + Market Knowledge';
     }
     return report;

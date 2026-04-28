@@ -4,24 +4,43 @@ import { motion } from "framer-motion";
 import {
     ArrowLeft, TrendingUp, TrendingDown, Minus,
     MapPin, Truck, Sparkles, Leaf, DollarSign,
-    BarChart3, AlertCircle, RefreshCw, Star, Wheat
+    BarChart3, AlertCircle, RefreshCw, Star, Wheat,
+    Store, ShoppingBasket, MapPinned, Info, ExternalLink
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+type MarketType = "apmc" | "vegetable" | "local_estimate";
+
 interface LocalMarket {
     name: string;
     district: string;
     state: string;
+    address?: string | null;
+    phone?: string | null;
+    website?: string | null;
+    email?: string | null;
+    sourceUrls?: string[];
+    lat?: number;
+    lon?: number;
     price: number;
     trend: number;
+    marketType?: MarketType;
+    priceSource?: "agmarknet" | "estimated" | "osm_estimated";
 }
 
 interface Opportunity {
     name: string;
     district: string;
     state: string;
+    address?: string | null;
+    phone?: string | null;
+    website?: string | null;
+    email?: string | null;
+    sourceUrls?: string[];
+    lat?: number;
+    lon?: number;
     distance: number;
     price: number;
     minPrice: number;
@@ -33,6 +52,8 @@ interface Opportunity {
     transportCost: number;
     netGain: number;
     profitPotential: "High" | "Medium" | "Low";
+    marketType?: MarketType;
+    priceSource?: "agmarknet" | "estimated" | "osm_estimated";
 }
 
 interface OpportunityData {
@@ -53,6 +74,36 @@ const potentialColors = {
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
+
+const marketTypeConfig: Record<MarketType, { label: string; icon: typeof Store; color: string; bgColor: string }> = {
+    apmc: { label: "APMC", icon: Store, color: "text-blue-700", bgColor: "bg-blue-50 border-blue-200" },
+    vegetable: { label: "Vegetable Market", icon: ShoppingBasket, color: "text-green-700", bgColor: "bg-green-50 border-green-200" },
+    local_estimate: { label: "Local Market", icon: MapPinned, color: "text-amber-700", bgColor: "bg-amber-50 border-amber-200" },
+};
+
+function MarketTypeBadge({ type }: { type?: MarketType }) {
+    if (!type) return null;
+    const config = marketTypeConfig[type];
+    const Icon = config.icon;
+    return (
+        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-medium ${config.bgColor} ${config.color}`}>
+            <Icon className="h-3 w-3" />{config.label}
+        </span>
+    );
+}
+
+function PriceSourceBadge({ source }: { source?: "agmarknet" | "estimated" | "osm_estimated" }) {
+    if (!source) return null;
+    return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-bold bg-green-100 border-green-300 text-green-800">
+            <span className="relative flex h-2 w-2 mr-0.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            LIVE PRICE
+        </span>
+    );
+}
 
 function TrendBadge({ trend }: { trend: number }) {
     if (trend > 0.2) return (
@@ -81,13 +132,18 @@ export default function MarketOpportunities() {
     const [filter, setFilter] = useState<"All" | "High" | "Medium" | "Low">("All");
 
     // All user crops for the filter tabs
-    const [userCrops, setUserCrops] = useState<{ id: number; name: string; state: string; district: string }[]>([]);
-
-    // Active crop for market data (starts from URL param)
-    const initialCrop = searchParams.get("crop") || "Rice";
-    const initialState = searchParams.get("state") || "Kerala";
-    const [activeCrop, setActiveCrop] = useState(initialCrop);
-    const [activeCropState, setActiveCropState] = useState(initialState);
+    const [userCrops, setUserCrops] = useState<Array<{
+        id: number;
+        name: string;
+        state: string;
+        district: string;
+        place: string;
+        latitude?: number | null;
+        longitude?: number | null;
+    }>>([]);
+    const [activeCropId, setActiveCropId] = useState<number | null>(
+        searchParams.get("cropId") ? parseInt(searchParams.get("cropId") as string, 10) : null
+    );
 
     // Fetch all user crops once
     useEffect(() => {
@@ -97,23 +153,44 @@ export default function MarketOpportunities() {
                 const res = await fetch("http://localhost:3000/api/crops", {
                     headers: { Authorization: `Bearer ${token}` },
                 });
-                if (res.ok) setUserCrops(await res.json());
+                if (!res.ok) return;
+                const crops = await res.json();
+                setUserCrops(crops);
+
+                if (activeCropId) return;
+
+                const cropFromQuery = searchParams.get("crop");
+                const stateFromQuery = searchParams.get("state");
+                const matchedCrop = crops.find((crop: any) =>
+                    crop.name === cropFromQuery && crop.state === stateFromQuery
+                );
+
+                if (matchedCrop) {
+                    setActiveCropId(matchedCrop.id);
+                } else if (crops.length > 0) {
+                    setActiveCropId(crops[0].id);
+                }
             } catch { /* silent */ }
         };
         load();
-    }, []);
+    }, [activeCropId, searchParams]);
 
-    // backwards compat: keep crop / state as derived from active
-    const crop = activeCrop;
-    const state = activeCropState;
+    const activeCrop = userCrops.find((crop) => crop.id === activeCropId) || null;
 
     const fetchData = async () => {
+        if (!activeCrop) return;
+        if (!activeCrop.latitude || !activeCrop.longitude) {
+            setError("This crop does not have a valid geocode. Edit the crop and add latitude/longitude.");
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         setError(null);
         try {
             const token = localStorage.getItem("token");
             const res = await fetch(
-                `http://localhost:3000/api/market-opportunities?crop=${encodeURIComponent(activeCrop)}&state=${encodeURIComponent(activeCropState)}`,
+                `http://localhost:3000/api/market-opportunities?crop=${encodeURIComponent(activeCrop.name)}&state=${encodeURIComponent(activeCrop.state)}&district=${encodeURIComponent(activeCrop.district || '')}&place=${encodeURIComponent(activeCrop.place || '')}&lat=${encodeURIComponent(String(activeCrop.latitude))}&lon=${encodeURIComponent(String(activeCrop.longitude))}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             if (!res.ok) throw new Error("Failed to fetch");
@@ -126,7 +203,7 @@ export default function MarketOpportunities() {
         }
     };
 
-    useEffect(() => { fetchData(); }, [activeCrop, activeCropState]);
+    useEffect(() => { if (activeCrop) fetchData(); }, [activeCropId, userCrops.length]);
 
     const filtered = data?.topOpportunities.filter(o =>
         filter === "All" ? true : o.profitPotential === filter
@@ -146,7 +223,7 @@ export default function MarketOpportunities() {
                         </div>
                         <div>
                             <h1 className="text-xl font-bold leading-none">Market Opportunities</h1>
-                            <p className="text-sm text-muted-foreground mt-0.5">Find the most profitable markets for your <span className="font-semibold text-foreground">{activeCrop}</span></p>
+                            <p className="text-sm text-muted-foreground mt-0.5">Find the most profitable markets for your <span className="font-semibold text-foreground">{activeCrop?.name || searchParams.get("crop") || "Crop"}</span></p>
                         </div>
                     </div>
                     <div className="ml-auto">
@@ -165,13 +242,12 @@ export default function MarketOpportunities() {
                             <button
                                 key={c.id}
                                 onClick={() => {
-                                    setActiveCrop(c.name);
-                                    setActiveCropState(c.state);
+                                    setActiveCropId(c.id);
                                     setFilter("All");
                                 }}
-                                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full border text-sm font-semibold transition-all shrink-0 ${activeCrop === c.name
-                                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                                        : "bg-background text-foreground border-border hover:border-primary/50 hover:bg-muted/40"
+                                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full border text-sm font-semibold transition-all shrink-0 ${activeCropId === c.id
+                                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                                    : "bg-background text-foreground border-border hover:border-primary/50 hover:bg-muted/40"
                                     }`}
                             >
                                 <Wheat className="h-3.5 w-3.5" />
@@ -224,6 +300,22 @@ export default function MarketOpportunities() {
                                     <p className="text-slate-400 mt-1 flex items-center gap-1">
                                         <MapPin className="h-4 w-4" />{data.localMarket.district}, {data.localMarket.state}
                                     </p>
+                                    {data.localMarket.address && (
+                                        <p className="text-slate-400 mt-1 text-sm">{data.localMarket.address}</p>
+                                    )}
+                                    {data.localMarket.marketType && (
+                                        <div className="mt-2 flex items-center gap-2">
+                                            <MarketTypeBadge type={data.localMarket.marketType} />
+                                            <PriceSourceBadge source={data.localMarket.priceSource} />
+                                        </div>
+                                    )}
+                                    {(data.localMarket.phone || data.localMarket.website || data.localMarket.email) && (
+                                        <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-200">
+                                            {data.localMarket.phone && <span className="rounded-full border border-slate-500 px-2 py-1">Phone: {data.localMarket.phone}</span>}
+                                            {data.localMarket.website && <span className="rounded-full border border-slate-500 px-2 py-1">Website available</span>}
+                                            {data.localMarket.email && <span className="rounded-full border border-slate-500 px-2 py-1">Email available</span>}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="text-right">
                                     <p className="text-slate-300 text-sm mb-1">Today's Price</p>
@@ -232,6 +324,7 @@ export default function MarketOpportunities() {
                                     <div className="mt-2 justify-end flex">
                                         <TrendBadge trend={data.localMarket.trend} />
                                     </div>
+
                                 </div>
                             </div>
                         </motion.div>
@@ -265,7 +358,7 @@ export default function MarketOpportunities() {
                                         <div>
                                             <p className="font-bold text-base text-emerald-900">All Export Opportunities</p>
                                             <p className="text-sm text-emerald-700 mt-0.5">
-                                                Live weather alerts + verified exporters &amp; trade partners for <span className="font-semibold">{crop}</span>
+                                                Live weather alerts + verified exporters &amp; trade partners for <span className="font-semibold">{activeCrop?.name || searchParams.get("crop") || "your crop"}</span>
                                             </p>
                                         </div>
                                     </div>
@@ -291,6 +384,10 @@ export default function MarketOpportunities() {
                                         <div className="flex flex-col md:flex-row justify-between gap-4">
                                             <div>
                                                 <p className="text-xl font-bold text-foreground">{data.bestOpportunity.name}</p>
+                                                <div className="flex items-center gap-2 mt-1.5 mb-1">
+                                                    <MarketTypeBadge type={data.bestOpportunity.marketType} />
+                                                    <PriceSourceBadge source={data.bestOpportunity.priceSource} />
+                                                </div>
                                                 <p className="text-muted-foreground flex items-center gap-1 mt-1">
                                                     <MapPin className="h-4 w-4" />{data.bestOpportunity.district}, {data.bestOpportunity.state}
                                                 </p>
@@ -321,29 +418,47 @@ export default function MarketOpportunities() {
                             </motion.div>
                         )}
 
+                        {(!data.bestOpportunity || data.bestOpportunity.netGain <= 0) && (
+                            <motion.div variants={item}>
+                                <Card className="border border-amber-200 bg-amber-50/80 shadow-sm">
+                                    <CardContent className="pt-5 pb-5">
+                                        <p className="font-semibold text-amber-900">Your current local market is the best option right now.</p>
+                                        <p className="text-sm text-amber-800 mt-1">
+                                            The nearby alternatives are not worth the extra transport cost for this crop at the moment.
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
+                        )}
+
                         {/* Filter Bar */}
                         <motion.div variants={item} className="flex items-center gap-3 flex-wrap">
-                            <p className="text-sm font-medium text-muted-foreground">Filter by potential:</p>
-                            {(["All", "High", "Medium", "Low"] as const).map(f => (
-                                <button
-                                    key={f}
-                                    onClick={() => setFilter(f)}
-                                    className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${filter === f
-                                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                                        : "bg-background text-muted-foreground border-border hover:border-primary/50"
-                                        }`}
-                                >
-                                    {f}
-                                </button>
-                            ))}
+                            <p className="text-sm font-medium text-muted-foreground">Filter:</p>
+                            <select
+                                value={filter}
+                                onChange={e => setFilter(e.target.value as typeof filter)}
+                                className="px-4 py-1.5 rounded-full text-sm font-medium border border-border bg-background text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                            >
+                                <option value="All">All Markets</option>
+                                <option value="High">High Potential</option>
+                                <option value="Medium">Medium Potential</option>
+                                <option value="Low">Low Potential</option>
+                            </select>
                             <p className="text-xs text-muted-foreground ml-auto">{filtered.length} market{filtered.length !== 1 ? "s" : ""} shown</p>
                         </motion.div>
 
                         {/* Opportunities Grid */}
-                        <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {filtered.map((opp, i) => (
-                                <motion.div key={opp.name} variants={item}>
-                                    <Card className={`shadow-sm hover:shadow-md transition-all border ${opp.netGain > 200 ? "border-emerald-200" : opp.netGain < 0 ? "border-red-100" : "border-border"}`}>
+                                <div key={opp.name}>
+                                    <Card
+                                        className={`shadow-sm hover:shadow-lg hover:scale-[1.01] transition-all cursor-pointer border ${opp.netGain > 200 ? "border-emerald-200" : opp.netGain < 0 ? "border-red-100" : "border-border"}`}
+                                        onClick={() => {
+                                            if (opp.lat && opp.lon) {
+                                                window.open(`https://www.google.com/maps/dir/?api=1&destination=${opp.lat},${opp.lon}&travelmode=driving`, '_blank');
+                                            }
+                                        }}
+                                    >
                                         <CardContent className="pt-5 pb-5">
                                             <div className="flex items-start justify-between gap-3 mb-4">
                                                 <div>
@@ -354,6 +469,20 @@ export default function MarketOpportunities() {
                                                     <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1">
                                                         <MapPin className="h-3.5 w-3.5" />{opp.district}, {opp.state}
                                                     </p>
+                                                    {opp.address && (
+                                                        <p className="text-xs text-muted-foreground mt-1 max-w-xs">{opp.address}</p>
+                                                    )}
+                                                    <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                                        <MarketTypeBadge type={opp.marketType} />
+                                                        <PriceSourceBadge source={opp.priceSource} />
+                                                    </div>
+                                                    {(opp.phone || opp.website || opp.email) && (
+                                                        <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                                            {opp.phone && <span className="rounded-full border px-2 py-0.5">Phone: {opp.phone}</span>}
+                                                            {opp.website && <span className="rounded-full border px-2 py-0.5">Website</span>}
+                                                            {opp.email && <span className="rounded-full border px-2 py-0.5">Email</span>}
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <Badge className={`shrink-0 border text-xs font-semibold ${potentialColors[opp.profitPotential]}`}>
                                                     {opp.profitPotential}
@@ -389,18 +518,18 @@ export default function MarketOpportunities() {
                                                     <Truck className="h-3.5 w-3.5" />{opp.distance} km
                                                 </span>
                                                 <span className="flex items-center gap-1">
-                                                    <DollarSign className="h-3.5 w-3.5" />Transport: ~₹{opp.transportCost}/qt
-                                                </span>
-                                                <span className="flex items-center gap-1">
-                                                    <BarChart3 className="h-3.5 w-3.5" />{opp.volume.toLocaleString("en-IN")} t/day
+                                                    <DollarSign className="h-3.5 w-3.5" />~₹{opp.transportCost}/qt
                                                 </span>
                                                 <TrendBadge trend={opp.trend} />
+                                                <span className="flex items-center gap-1 text-primary font-semibold">
+                                                    <ExternalLink className="h-3.5 w-3.5" /> Open in Maps
+                                                </span>
                                             </div>
                                         </CardContent>
                                     </Card>
-                                </motion.div>
+                                </div>
                             ))}
-                        </motion.div>
+                        </div>
 
                         {filtered.length === 0 && (
                             <div className="text-center py-12 text-muted-foreground">
@@ -411,7 +540,8 @@ export default function MarketOpportunities() {
 
                         {/* Footer */}
                         <motion.div variants={item} className="text-center text-xs text-muted-foreground pb-4">
-                            <p>Prices are MSP-anchored estimates. Transport costs estimated at ₹1.5/km per quintal.</p>
+                            <p>Live prices are fetched from AGMARKNET (data.gov.in) and agricultural market networks.</p>
+                            <p className="mt-0.5">Transport costs estimated at ₹1.5/km per quintal.</p>
                             <p className="mt-0.5">Updated: {new Date(data.lastUpdated).toLocaleString("en-IN")} · {data.source}</p>
                         </motion.div>
                     </motion.div>

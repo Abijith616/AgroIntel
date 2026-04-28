@@ -18,7 +18,9 @@ export default function AddCrop() {
         country: '',
         state: '',
         district: '',
-        place: ''
+        place: '',
+        latitude: '',
+        longitude: ''
     });
 
     const [states, setStates] = useState<string[]>([]);
@@ -236,6 +238,37 @@ export default function AddCrop() {
                                         required
                                         className="h-12 md:h-14 text-lg"
                                     />
+                                </div>
+                                <div className="space-y-3">
+                                    <Label htmlFor="latitude" className="text-lg font-medium">Latitude</Label>
+                                    <Input
+                                        id="latitude"
+                                        name="latitude"
+                                        type="number"
+                                        step="0.000001"
+                                        placeholder="e.g. 10.342400"
+                                        value={formData.latitude}
+                                        onChange={handleChange}
+                                        required
+                                        className="h-12 md:h-14 text-lg"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <Label htmlFor="longitude" className="text-lg font-medium">Longitude</Label>
+                                    <Input
+                                        id="longitude"
+                                        name="longitude"
+                                        type="number"
+                                        step="0.000001"
+                                        placeholder="e.g. 76.211200"
+                                        value={formData.longitude}
+                                        onChange={handleChange}
+                                        required
+                                        className="h-12 md:h-14 text-lg"
+                                    />
+                                    <p className="text-sm text-muted-foreground">
+                                        Enter the field geocode so AgroIntel can find real nearby markets.
+                                    </p>
                                 </div>
                             </div>
                         </div>

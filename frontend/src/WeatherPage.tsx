@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CloudSun, Droplets, Wind, TrendingUp, AlertTriangle, Globe, ArrowLeft, Calendar, WifiOff, Leaf, ThumbsUp, ThumbsDown } from "lucide-react";
+import { CloudSun, Droplets, Wind, TrendingUp, AlertTriangle, Globe, ArrowLeft, Calendar, WifiOff, Leaf, ThumbsUp, ThumbsDown, X, Phone, Mail, ExternalLink, Activity, Clock, ShieldAlert } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 
 // Simple coordinate mapping (same as Dashboard)
@@ -238,6 +238,11 @@ export default function WeatherPage() {
     const [error, setError] = useState<string | null>(null);
     const [fetched, setFetched] = useState(false);
 
+    // Modal state
+    const [selectedOpp, setSelectedOpp] = useState<MarketOpportunity | null>(null);
+    const [oppDetails, setOppDetails] = useState<any | null>(null);
+    const [oppDetailsLoading, setOppDetailsLoading] = useState(false);
+
     // Load user's crops on mount
     useEffect(() => {
         const loadCrops = async () => {
@@ -300,6 +305,57 @@ export default function WeatherPage() {
             setLoading(false);
             setFetched(true);
         }
+    };
+
+    const handleOppClick = async (opp: MarketOpportunity) => {
+        setSelectedOpp(opp);
+        setOppDetailsLoading(true);
+        setOppDetails(null);
+        try {
+            const token = localStorage.getItem('token');
+            const params = new URLSearchParams({
+                region: opp.region,
+                country: opp.country,
+                crop: opp.crop,
+                stressType: opp.stressType,
+                severity: opp.severity,
+                weatherSummary: opp.weatherSummary,
+                totalRain: opp.totalRain.toString(),
+                avgMaxTemp: opp.avgMaxTemp.toString(),
+                opportunityInsight: opp.opportunityInsight,
+                farmerState: selectedCrop?.state || 'Kerala'
+            });
+            const res = await fetch(`http://localhost:3000/api/weather/opportunity-details?${params.toString()}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setOppDetails(data);
+            }
+        } catch (err) {
+            console.error("Failed to fetch opportunity details", err);
+        } finally {
+            setOppDetailsLoading(false);
+        }
+    };
+
+    const handleSaveTask = () => {
+        if (!selectedOpp || !oppDetails) return;
+        const newTask = {
+            id: `task_${Date.now()}`,
+            title: `Export to ${selectedOpp.region} (${selectedOpp.stressType})`,
+            subtitle: `${selectedOpp.crop} • Expected Profit: ${oppDetails.expectedProfit.split('.')[0]}`,
+            timestamp: Date.now(),
+            completed: false
+        };
+        const storedTasks = localStorage.getItem('agrointel_tasks');
+        const tasks = storedTasks ? JSON.parse(storedTasks) : [];
+        tasks.push(newTask);
+        localStorage.setItem('agrointel_tasks', JSON.stringify(tasks));
+        
+        // Close modal
+        setSelectedOpp(null);
+        alert('Saved to Tasks!');
     };
 
     const formatNumber = (num: number) => (num ? num.toFixed(1) : '0');
@@ -890,13 +946,7 @@ export default function WeatherPage() {
                                                 return (
                                                     <div
                                                         key={i}
-                                                        onClick={() => navigate('/export-opportunities', {
-                                                            state: {
-                                                                weatherOpportunities: marketData!.opportunities,
-                                                                stableRegions: marketData!.stableRegions,
-                                                                crop: selectedCrop?.name ?? '',
-                                                            }
-                                                        })}
+                                                        onClick={() => handleOppClick(opp)}
                                                         className={`overflow-hidden rounded-2xl ${th.cardBg} ${th.shadow} flex flex-col cursor-pointer hover:scale-[1.01] hover:shadow-lg transition-all duration-200`}
                                                     >
                                                         {/* Header strip — slightly deeper tint */}
@@ -1011,6 +1061,130 @@ export default function WeatherPage() {
                     </div>
                 )}
             </div>
+
+            {/* Opportunity Details Modal */}
+            {selectedOpp && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedOpp(null)}>
+                    <div 
+                        className="bg-background rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]" 
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div className="bg-muted px-8 py-6 flex items-center justify-between border-b">
+                            <div>
+                                <div className="flex items-center gap-3 mb-2">
+                                    <h3 className="text-3xl font-bold">{selectedOpp.region}</h3>
+                                    <Badge variant="outline" className="bg-background text-base px-3 py-1">{selectedOpp.country}</Badge>
+                                </div>
+                                <p className="text-base text-muted-foreground flex items-center gap-2 font-medium">
+                                    <AlertTriangle className="h-5 w-5 text-orange-500" />
+                                    {selectedOpp.stressType} ({selectedOpp.severity})
+                                </p>
+                            </div>
+                            <Button variant="ghost" size="icon" onClick={() => setSelectedOpp(null)} className="h-10 w-10">
+                                <X className="h-6 w-6" />
+                            </Button>
+                        </div>
+
+                        {/* Body */}
+                        <div className="p-8 overflow-y-auto flex-1 space-y-8">
+                            {oppDetailsLoading ? (
+                                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground space-y-4">
+                                    <div className="h-10 w-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+                                    <p className="text-lg">AI is analysing profit potential and fetching verified contacts...</p>
+                                </div>
+                            ) : oppDetails ? (
+                                <>
+                                    {/* AI Insights Grid */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6">
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <TrendingUp className="h-6 w-6 text-emerald-600" />
+                                                <h4 className="font-bold text-lg text-emerald-900">Expected Profit</h4>
+                                            </div>
+                                            <p className="text-base text-emerald-800 leading-relaxed font-medium">{oppDetails.expectedProfit}</p>
+                                        </div>
+
+                                        <div className={`border rounded-xl p-6 ${
+                                            oppDetails.riskLevel === 'High' ? 'bg-red-50 border-red-200' :
+                                            oppDetails.riskLevel === 'Medium' ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-200'
+                                        }`}>
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <ShieldAlert className={`h-6 w-6 ${
+                                                    oppDetails.riskLevel === 'High' ? 'text-red-600' :
+                                                    oppDetails.riskLevel === 'Medium' ? 'text-amber-600' : 'text-blue-600'
+                                                }`} />
+                                                <h4 className={`font-bold text-lg ${
+                                                    oppDetails.riskLevel === 'High' ? 'text-red-900' :
+                                                    oppDetails.riskLevel === 'Medium' ? 'text-amber-900' : 'text-blue-900'
+                                                }`}>Risk Assessment</h4>
+                                            </div>
+                                            <p className={`text-base leading-relaxed font-medium ${
+                                                    oppDetails.riskLevel === 'High' ? 'text-red-800' :
+                                                    oppDetails.riskLevel === 'Medium' ? 'text-amber-800' : 'text-blue-800'
+                                                }`}>{oppDetails.risk}</p>
+                                        </div>
+
+                                        <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-6 md:col-span-2">
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <Clock className="h-6 w-6 text-indigo-600" />
+                                                <h4 className="font-bold text-lg text-indigo-900">Closing Window</h4>
+                                                {oppDetails.urgency === 'Urgent' && (
+                                                    <Badge className="bg-red-500 hover:bg-red-600 ml-auto px-3 py-1 text-sm">Urgent</Badge>
+                                                )}
+                                            </div>
+                                            <p className="text-base text-indigo-800 leading-relaxed font-medium">{oppDetails.closingWindow}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Contacts List */}
+                                    <div>
+                                        <h4 className="font-bold text-xl mb-4 flex items-center gap-3">
+                                            <Globe className="h-6 w-6 text-muted-foreground" />
+                                            Verified Contacts ({oppDetails.contacts.length})
+                                        </h4>
+                                        <div className="space-y-4">
+                                            {oppDetails.contacts.length === 0 ? (
+                                                <p className="text-sm text-muted-foreground italic">No direct contacts available. Recommend checking local trade boards.</p>
+                                            ) : (
+                                                oppDetails.contacts.map((contact: any, i: number) => (
+                                                    <div key={i} className="border rounded-xl p-5 hover:border-primary/40 transition-colors bg-card">
+                                                        <div className="flex items-center justify-between mb-3">
+                                                            <h5 className="font-bold text-lg text-foreground">{contact.name}</h5>
+                                                            <Badge variant="secondary" className="text-xs px-2 py-1">{contact.type}</Badge>
+                                                        </div>
+                                                        <div className="space-y-2.5 mt-4">
+                                                            <a href={`tel:${contact.phone}`} className="flex items-center gap-3 text-base font-medium text-muted-foreground hover:text-primary w-fit transition-colors">
+                                                                <Phone className="h-5 w-5 text-slate-400" /> {contact.phone}
+                                                            </a>
+                                                            <a href={`mailto:${contact.email}`} className="flex items-center gap-3 text-base font-medium text-muted-foreground hover:text-primary w-fit transition-colors">
+                                                                <Mail className="h-5 w-5 text-slate-400" /> {contact.email}
+                                                            </a>
+                                                            <a href={contact.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-base font-medium text-blue-600 hover:text-blue-800 w-fit transition-colors">
+                                                                <ExternalLink className="h-5 w-5 text-blue-400" /> {contact.website.replace('https://', '').replace('http://', '')}
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <p className="text-center text-red-500 py-10 text-lg">Failed to load details. Please try again.</p>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-6 border-t bg-muted/30 flex items-center justify-between">
+                            <Button variant="outline" size="lg" className="text-base" onClick={() => setSelectedOpp(null)}>Cancel</Button>
+                            <Button size="lg" className="text-base gap-2" onClick={handleSaveTask} disabled={oppDetailsLoading || !oppDetails}>
+                                <Activity className="h-5 w-5" /> Save to Tasks
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

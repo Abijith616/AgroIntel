@@ -1,9 +1,7 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { WeatherService } from '../services/weather.service';
 import { generatePlantHealthReport, PlantHealthRequest } from '../services/plant-health.service';
-
-const prisma = new PrismaClient();
+import prisma from '../prisma';
 
 // Shared with ai-report.controller — coords per Indian state
 const STATE_COORDS: Record<string, { lat: number; lon: number }> = {

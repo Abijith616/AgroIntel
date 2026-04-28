@@ -46,6 +46,8 @@ model Crop {
   state      String
   district   String
   place      String
+  latitude   Float?
+  longitude  Float?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   expenses   Expense[]

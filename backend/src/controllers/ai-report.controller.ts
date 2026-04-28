@@ -48,7 +48,7 @@ export const generateMarketReport = async (req: Request, res: Response) => {
 
         for (const cropName of uniqueCropNames) {
             try {
-                const marketData = MarketService.getMarketPrices(cropName, coords.lat, coords.lon);
+                const marketData = await MarketService.getMarketPrices(cropName, coords.lat, coords.lon, farmerState, farmerDistrict);
                 const nearest = marketData.nearestMarket;
                 const allPrices = [nearest, ...marketData.alternativeMarkets].map(m => m.price);
                 const natAvg = Math.round(allPrices.reduce((a, b) => a + b, 0) / allPrices.length);

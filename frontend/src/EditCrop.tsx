@@ -20,7 +20,9 @@ export default function EditCrop() {
         country: '',
         state: '',
         district: '',
-        place: ''
+        place: '',
+        latitude: '',
+        longitude: ''
     });
 
     const [states, setStates] = useState<string[]>([]);
@@ -49,7 +51,9 @@ export default function EditCrop() {
                             country: crop.country,
                             state: crop.state || '',
                             district: crop.district || '',
-                            place: crop.place
+                            place: crop.place,
+                            latitude: crop.latitude?.toString() || '',
+                            longitude: crop.longitude?.toString() || ''
                         });
 
                         // Trigger logic for states/districts dependent on country/state
@@ -284,6 +288,37 @@ export default function EditCrop() {
                                         required
                                         className="h-12 md:h-14 text-lg"
                                     />
+                                </div>
+                                <div className="space-y-3">
+                                    <Label htmlFor="latitude" className="text-lg font-medium">Latitude</Label>
+                                    <Input
+                                        id="latitude"
+                                        name="latitude"
+                                        type="number"
+                                        step="0.000001"
+                                        placeholder="e.g. 10.342400"
+                                        value={formData.latitude}
+                                        onChange={handleChange}
+                                        required
+                                        className="h-12 md:h-14 text-lg"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <Label htmlFor="longitude" className="text-lg font-medium">Longitude</Label>
+                                    <Input
+                                        id="longitude"
+                                        name="longitude"
+                                        type="number"
+                                        step="0.000001"
+                                        placeholder="e.g. 76.211200"
+                                        value={formData.longitude}
+                                        onChange={handleChange}
+                                        required
+                                        className="h-12 md:h-14 text-lg"
+                                    />
+                                    <p className="text-sm text-muted-foreground">
+                                        Keep the crop geocode accurate so market matching stays local.
+                                    </p>
                                 </div>
                             </div>
                         </div>

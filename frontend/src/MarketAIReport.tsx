@@ -5,7 +5,7 @@ import {
     ArrowLeft, Brain, Leaf, TrendingUp, TrendingDown,
     AlertTriangle, CheckCircle2, Zap, BarChart3, Globe,
     MapPin, Sprout, Clock, ShieldAlert, RefreshCw,
-    ChevronRight, Star, CloudRain, Activity
+    Star, CloudRain, Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -441,13 +441,7 @@ export default function MarketAIReport() {
                                 </div>
                             </motion.section>
 
-                            {/* ── Footer ── */}
-                            <motion.div variants={fade} className="flex flex-wrap items-center justify-between gap-5 pt-6 border-t border-slate-200 pb-10">
-                                <span className="text-base text-slate-400">🤖 {report.dataSource}</span>
-                                <Button variant="outline" size="lg" onClick={() => navigate("/market")} className="gap-2 text-base px-6 py-3 h-auto">
-                                    View Full Market Analysis <ChevronRight className="h-5 w-5" />
-                                </Button>
-                            </motion.div>
+
 
                         </motion.div>
                     </AnimatePresence>
