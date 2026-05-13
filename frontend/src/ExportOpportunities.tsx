@@ -2,14 +2,14 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
     Leaf, ArrowLeft, Globe, Phone, Mail, ExternalLink,
-    TrendingUp, PackageCheck, Truck, Star, Filter, Search,
+    TrendingUp, PackageCheck, Truck, Filter, Search,
     Building2, MapPin, CheckCircle2, CloudLightning,
-    Droplets, CloudSun, Wind
+    Droplets, CloudSun, Wind, RefreshCw, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 
 // ─── Weather opportunity type (passed via router state) ───────────────────────
 interface WeatherOpportunity {
@@ -26,93 +26,34 @@ interface WeatherOpportunity {
     error: string | null;
 }
 
-// ─── Export contact type ──────────────────────────────────────────────────────
+// ─── Export contact type (from API) ───────────────────────────────────────────
 interface ExportContact {
     id: number;
     name: string;
-    type: "Exporter" | "Agri-Broker" | "Trade Board" | "Government";
+    type: "Exporter" | "Agri-Broker" | "Trade Board" | "Government" | "Cooperative" | "Commodity Board";
     crops: string[];
     description: string;
+    cropSpecificInsight: string;
     email: string;
     phone: string;
     website: string;
     location: string;
-    rating: number;
     verified: boolean;
-    priceRange: string;
     tag: string;
     tagColor: string;
+    relevanceScore: number;
 }
 
-// ─── Static export contacts ───────────────────────────────────────────────────
-const exportContacts: ExportContact[] = [
-    {
-        id: 1, name: "APEDA – Agricultural & Processed Food Export Development Authority",
-        type: "Government", crops: ["Rice", "Wheat", "Spices", "Fruits", "Vegetables"],
-        description: "India's premier government body promoting exports of agricultural and processed food products. Provides financial assistance, market development support, and quality certification.",
-        email: "apeda@apeda.gov.in", phone: "+91-11-26534186", website: "https://apeda.gov.in",
-        location: "New Delhi, India", rating: 4.8, verified: true, priceRange: "Government rates",
-        tag: "Govt. Authority", tagColor: "bg-blue-100 text-blue-700",
-    },
-    {
-        id: 2, name: "Kisan Exports Pvt. Ltd.",
-        type: "Exporter", crops: ["Rice", "Wheat", "Corn", "Pulses"],
-        description: "One of India's leading grain exporters with 20+ years of experience. Handles bulk orders, logistics, and international documentation for Southeast Asia and Gulf markets.",
-        email: "trade@kisanexports.com", phone: "+91-98400-12345", website: "https://kisanexports.com",
-        location: "Chennai, Tamil Nadu", rating: 4.5, verified: true, priceRange: "₹25,000 – ₹60,000/MT",
-        tag: "Top Exporter", tagColor: "bg-green-100 text-green-700",
-    },
-    {
-        id: 3, name: "SpiceRoute Global Trading",
-        type: "Exporter", crops: ["Spices", "Turmeric", "Cardamom", "Pepper", "Ginger"],
-        description: "Specialises in premium spice exports to Europe and the US. Certified organic options available. Direct farm-to-ship supply chain ensuring freshness and traceability.",
-        email: "export@spicerouteglobal.in", phone: "+91-484-2367890", website: "https://spicerouteglobal.in",
-        location: "Kochi, Kerala", rating: 4.7, verified: true, priceRange: "₹3,000 – ₹15,000/kg",
-        tag: "Organic Certified", tagColor: "bg-emerald-100 text-emerald-700",
-    },
-    {
-        id: 4, name: "Punjab AgriTrade Hub",
-        type: "Agri-Broker", crops: ["Wheat", "Basmati Rice", "Mustard", "Cotton"],
-        description: "Regional agri-broker connecting North Indian farmers with international buyers. Competitive commission-based model with transparent pricing and same-week payments.",
-        email: "connect@punjabagritrade.in", phone: "+91-161-4567890", website: "https://punjabagritrade.in",
-        location: "Ludhiana, Punjab", rating: 4.3, verified: true, priceRange: "₹20,000 – ₹55,000/MT",
-        tag: "Fast Payments", tagColor: "bg-yellow-100 text-yellow-700",
-    },
-    {
-        id: 5, name: "Agri Export India – FIEO Member",
-        type: "Trade Board", crops: ["All Crops", "Organic Produce", "Processed Foods"],
-        description: "Federation of Indian Export Organisations member. Facilitates connections between Indian farmers and over 3,000 global importers. Provides export licensing and trade finance guidance.",
-        email: "agriexport@fieo.org", phone: "+91-11-26288888", website: "https://fieo.org/agriculture",
-        location: "Mumbai, Maharashtra", rating: 4.6, verified: true, priceRange: "Market-linked pricing",
-        tag: "FIEO Registered", tagColor: "bg-indigo-100 text-indigo-700",
-    },
-    {
-        id: 6, name: "FreshLink International",
-        type: "Exporter", crops: ["Fruits", "Vegetables", "Mangoes", "Grapes", "Pomegranate"],
-        description: "Leading fresh produce exporter specialising in horticulture. Maintains cold-chain infrastructure and exports to UAE, UK, Germany, and Singapore. Minimum order: 5 MT.",
-        email: "info@freshlinkinternational.com", phone: "+91-20-67901234", website: "https://freshlinkinternational.com",
-        location: "Pune, Maharashtra", rating: 4.4, verified: true, priceRange: "Seasonal pricing",
-        tag: "Cold Chain", tagColor: "bg-cyan-100 text-cyan-700",
-    },
-    {
-        id: 7, name: "GrainBridge Commodities",
-        type: "Agri-Broker", crops: ["Soybean", "Corn", "Groundnut", "Sesame", "Sunflower"],
-        description: "Oilseed and pulse export specialist with decade-long experience. Connects farmers in Gujarat and Rajasthan with buyers in Middle East and African markets.",
-        email: "sales@grainbridge.co.in", phone: "+91-79-26578900", website: "https://grainbridge.co.in",
-        location: "Ahmedabad, Gujarat", rating: 4.2, verified: false, priceRange: "₹4,000 – ₹12,000/quintal",
-        tag: "Oilseeds Expert", tagColor: "bg-orange-100 text-orange-700",
-    },
-    {
-        id: 8, name: "Karnataka Agri Export Corporation",
-        type: "Government", crops: ["Coffee", "Cardamom", "Silk", "Vegetables", "Flowers"],
-        description: "State government body promoting Karnataka's agriculture exports. Assists with quality certification, packaging subsidies, and connects farmers to international trade fairs.",
-        email: "kaec@karnataka.gov.in", phone: "+91-80-22251234", website: "https://kstdc.co",
-        location: "Bengaluru, Karnataka", rating: 4.1, verified: true, priceRange: "Subsidy-linked rates",
-        tag: "State Govt.", tagColor: "bg-blue-100 text-blue-700",
-    },
-];
+// ─── Cache key for localStorage ───────────────────────────────────────────────
+const CACHE_KEY = "agrointel_export_partners_v1";
 
-const ALL_TYPES = ["All", "Exporter", "Agri-Broker", "Trade Board", "Government"];
+interface CachedPartners {
+    crops: string[];
+    data: ExportContact[];
+    fetchedAt: string;
+}
+
+const ALL_TYPES = ["All", "Exporter", "Trade Board", "Government", "Cooperative", "Commodity Board"];
 
 // ─── Pastel theme map (matches WeatherPage card styles) ───────────────────────
 const stressTheme = {
@@ -170,18 +111,6 @@ function WeatherOppCard({ opp, index }: { opp: WeatherOpportunity; index: number
     );
 }
 
-// ─── Star rating ──────────────────────────────────────────────────────────────
-function StarRating({ rating }: { rating: number }) {
-    return (
-        <div className="flex items-center gap-1">
-            {[1, 2, 3, 4, 5].map((s) => (
-                <Star key={s} className={`h-3.5 w-3.5 ${s <= Math.round(rating) ? "text-amber-400 fill-amber-400" : "text-gray-200 fill-gray-200"}`} />
-            ))}
-            <span className="text-xs text-muted-foreground ml-1">{rating.toFixed(1)}</span>
-        </div>
-    );
-}
-
 // ─── Export contact card ──────────────────────────────────────────────────────
 function ExportCard({ contact, index }: { contact: ExportContact; index: number }) {
     return (
@@ -203,12 +132,19 @@ function ExportCard({ contact, index }: { contact: ExportContact; index: number 
                                 <span className="text-xs text-muted-foreground px-2.5 py-0.5 bg-muted rounded-full">{contact.type}</span>
                             </div>
                         </div>
-                        <StarRating rating={contact.rating} />
                     </div>
                     <div className="flex items-center gap-4 mb-3 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{contact.location}</span>
-                        <span className="flex items-center gap-1"><TrendingUp className="h-3.5 w-3.5 text-green-500" />{contact.priceRange}</span>
                     </div>
+                    {/* AI-generated crop-specific insight */}
+                    {contact.cropSpecificInsight && (
+                        <div className="bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2 mb-3">
+                            <p className="text-xs text-emerald-800 leading-relaxed flex items-start gap-1.5">
+                                <TrendingUp className="h-3.5 w-3.5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                                {contact.cropSpecificInsight}
+                            </p>
+                        </div>
+                    )}
                     <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{contact.description}</p>
                     <div className="flex flex-wrap gap-1.5 mb-5">
                         {contact.crops.map((crop) => (
@@ -265,6 +201,94 @@ export default function ExportOpportunities() {
     const [selectedCrop, setSelectedCrop] = useState(passedCrop || "All");
     const [selectedType, setSelectedType] = useState("All");
 
+    // ── Dynamic export partners from API with caching ─────────────────────────
+    const [exportContacts, setExportContacts] = useState<ExportContact[]>([]);
+    const [partnersLoading, setPartnersLoading] = useState(true);
+    const [isCached, setIsCached] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+    const [userCrops, setUserCrops] = useState<string[]>([]);
+
+    // Fetch user's crops from backend
+    useEffect(() => {
+        const fetchCrops = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                const res = await fetch("http://localhost:3000/api/crops", {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    const cropNames = [...new Set(data.map((c: any) => c.name as string))] as string[];
+                    const state = data[0]?.state || "Kerala";
+                    setUserCrops(cropNames.length > 0 ? cropNames : ["Rice"]);
+                    (window as any).__agrointel_farmer_state = state;
+                } else {
+                    setUserCrops(["Rice"]); // fallback
+                }
+            } catch {
+                setUserCrops(["Rice"]); // fallback on error
+            }
+        };
+        fetchCrops();
+    }, []);
+
+    // Fetch export partners (with localStorage caching)
+    const fetchPartners = useCallback(async (forceRefresh = false) => {
+        if (userCrops.length === 0) return;
+        const farmerState = (window as any).__agrointel_farmer_state || "Kerala";
+        const token = localStorage.getItem("token");
+
+        // Check localStorage cache first (unless force refresh)
+        if (!forceRefresh) {
+            try {
+                const raw = localStorage.getItem(CACHE_KEY);
+                if (raw) {
+                    const cached: CachedPartners = JSON.parse(raw);
+                    const cachedCropsSorted = [...cached.crops].sort().join(",");
+                    const currentCropsSorted = [...userCrops].sort().join(",");
+                    if (cachedCropsSorted === currentCropsSorted && cached.data.length > 0) {
+                        setExportContacts(cached.data);
+                        setIsCached(true);
+                        setPartnersLoading(false);
+                        return;
+                    }
+                }
+            } catch { /* cache miss */ }
+        }
+
+        // Fetch from API
+        setPartnersLoading(true);
+        setRefreshing(forceRefresh);
+        try {
+            const cropsParam = userCrops.join(",");
+            const res = await fetch(
+                `http://localhost:3000/api/export-partners?crops=${encodeURIComponent(cropsParam)}&state=${encodeURIComponent(farmerState)}&forceRefresh=${forceRefresh}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (res.ok) {
+                const data = await res.json();
+                setExportContacts(data.partners || []);
+                setIsCached(data.cached || false);
+                // Save to localStorage
+                const toCache: CachedPartners = {
+                    crops: userCrops,
+                    data: data.partners || [],
+                    fetchedAt: data.fetchedAt || new Date().toISOString(),
+                };
+                localStorage.setItem(CACHE_KEY, JSON.stringify(toCache));
+            }
+        } catch (e) {
+            console.error("Failed to fetch export partners", e);
+        } finally {
+            setPartnersLoading(false);
+            setRefreshing(false);
+        }
+    }, [userCrops]);
+
+    useEffect(() => {
+        fetchPartners(false);
+    }, [fetchPartners]);
+
     // Filter weather opportunities by selected crop
     const filteredWeather = weatherOpportunities.filter((o) =>
         selectedCrop === "All" || o.crop.toLowerCase() === selectedCrop.toLowerCase()
@@ -278,8 +302,7 @@ export default function ExportOpportunities() {
             c.location.toLowerCase().includes(search.toLowerCase());
         const matchCrop =
             selectedCrop === "All" ||
-            c.crops.some((cr) => cr.toLowerCase().includes(selectedCrop.toLowerCase())) ||
-            c.crops.includes("All Crops");
+            c.crops.some((cr) => cr.toLowerCase().includes(selectedCrop.toLowerCase()));
         const matchType = selectedType === "All" || c.type === selectedType;
         return matchSearch && matchCrop && matchType;
     });
@@ -304,9 +327,9 @@ export default function ExportOpportunities() {
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-3 text-sm text-muted-foreground">
                     <PackageCheck className="h-4 w-4 text-primary" />
-                    <span className="font-medium text-foreground">{filteredContacts.length}</span> export partners
+                    <span className="font-medium text-foreground">{partnersLoading ? '…' : filteredContacts.length}</span> export partners
                     {weatherOpportunities.length > 0 && (
                         <>
                             <span className="mx-1 text-muted-foreground/40">·</span>
@@ -314,6 +337,17 @@ export default function ExportOpportunities() {
                             <span className="font-medium text-foreground">{filteredWeather.length}</span> live alerts
                         </>
                     )}
+                    {isCached && <span className="text-xs text-muted-foreground/60 ml-1">(cached)</span>}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 ml-1"
+                        disabled={refreshing || partnersLoading}
+                        onClick={() => fetchPartners(true)}
+                        title="Refresh export partners (fetches fresh data)"
+                    >
+                        {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                    </Button>
                 </div>
             </header>
 
@@ -340,8 +374,8 @@ export default function ExportOpportunities() {
                             </div>
                             <div className="grid grid-cols-3 gap-4 flex-shrink-0">
                                 {[
-                                    { label: "Export Partners", value: "8+" },
-                                    { label: "Countries", value: "30+" },
+                                    { label: "Export Partners", value: `${exportContacts.length}+` },
+                                    { label: "Your Crops", value: `${userCrops.length}` },
                                     { label: "Live Alerts", value: `${weatherOpportunities.length}` },
                                 ].map((s) => (
                                     <div key={s.label} className="text-center bg-white/15 backdrop-blur-sm rounded-xl px-4 py-3">
@@ -446,14 +480,34 @@ export default function ExportOpportunities() {
                         </div>
                         <div>
                             <h2 className="text-lg font-bold">Export Partner Directory</h2>
-                            <p className="text-sm text-muted-foreground">Verified exporters, trade boards & agri-brokers</p>
+                            <p className="text-sm text-muted-foreground">Real verified organisations matched to your crops</p>
                         </div>
                         <span className="ml-auto text-xs bg-muted text-muted-foreground font-semibold px-3 py-1 rounded-full">
-                            {filteredContacts.length} partner{filteredContacts.length !== 1 ? "s" : ""}
+                            {partnersLoading ? '…' : `${filteredContacts.length} partner${filteredContacts.length !== 1 ? "s" : ""}`}
                         </span>
                     </div>
 
-                    {filteredContacts.length === 0 ? (
+                    {partnersLoading ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                            {[1, 2, 3, 4, 5, 6].map((i) => (
+                                <div key={i} className="rounded-xl border p-6 space-y-3 animate-pulse">
+                                    <div className="h-5 w-3/4 bg-muted rounded" />
+                                    <div className="flex gap-2">
+                                        <div className="h-4 w-20 bg-muted rounded-full" />
+                                        <div className="h-4 w-16 bg-muted rounded-full" />
+                                    </div>
+                                    <div className="h-4 w-1/2 bg-muted rounded" />
+                                    <div className="h-12 w-full bg-muted rounded-lg" />
+                                    <div className="h-4 w-full bg-muted rounded" />
+                                    <div className="h-4 w-5/6 bg-muted rounded" />
+                                    <div className="flex gap-1.5 mt-2">
+                                        <div className="h-5 w-12 bg-muted rounded-full" />
+                                        <div className="h-5 w-14 bg-muted rounded-full" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : filteredContacts.length === 0 ? (
                         <div className="text-center py-16 text-muted-foreground">
                             <Globe className="h-12 w-12 mx-auto mb-3 opacity-30" />
                             <p className="text-lg font-medium">No export partners found</p>

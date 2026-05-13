@@ -49,6 +49,16 @@ const validateCoordinateRange = (latitude: number, longitude: number) => {
     }
 };
 
+// India bounding box: lat 6.5–35.7, lon 68.1–97.4
+const INDIA_BOUNDS = { latMin: 6.5, latMax: 35.7, lonMin: 68.1, lonMax: 97.4 };
+
+const validateIndiaCoordinates = (latitude: number, longitude: number) => {
+    if (latitude < INDIA_BOUNDS.latMin || latitude > INDIA_BOUNDS.latMax ||
+        longitude < INDIA_BOUNDS.lonMin || longitude > INDIA_BOUNDS.lonMax) {
+        throw new Error('Coordinates are outside India. AgroIntel currently supports Indian locations only.');
+    }
+};
+
 export const createCrop = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const userId = req.user?.userId;
@@ -57,22 +67,25 @@ export const createCrop = async (req: AuthenticatedRequest, res: Response) => {
             return;
         }
 
-        const { name, landVolume, landUnit, phase, country, state, district, place, latitude, longitude } = req.body;
+        const { name, landVolume, landUnit, phase, state, district, place, latitude, longitude } = req.body;
 
-        if (!name || !landUnit || !phase || !country || !place) {
+        if (!name || !landUnit || !phase || !place) {
             res.status(400).json({ error: 'All fields are required' });
             return;
         }
 
-        if (country === 'India' && (!state || !district)) {
-            res.status(400).json({ error: 'State and District are required for India' });
+        if (!state || !district) {
+            res.status(400).json({ error: 'State and District are required' });
             return;
         }
+
+        const country = 'India';
 
         const parsedLandVolume = parsePositiveNumber(landVolume, 'Land volume');
         const parsedLatitude = parseCoordinate(latitude, 'Latitude');
         const parsedLongitude = parseCoordinate(longitude, 'Longitude');
         validateCoordinateRange(parsedLatitude, parsedLongitude);
+        validateIndiaCoordinates(parsedLatitude, parsedLongitude);
 
         const rows = await prisma.$queryRawUnsafe<CropRow[]>(
             `INSERT INTO "Crop" ("userId", "name", "landVolume", "landUnit", "phase", "country", "state", "district", "place", "latitude", "longitude", "createdAt", "updatedAt")
@@ -136,11 +149,13 @@ export const updateCrop = async (req: AuthenticatedRequest, res: Response) => {
             return;
         }
 
-        const { name, landVolume, landUnit, phase, country, state, district, place, latitude, longitude } = req.body;
+        const { name, landVolume, landUnit, phase, state, district, place, latitude, longitude } = req.body;
+        const country = 'India';
         const parsedLandVolume = parsePositiveNumber(landVolume, 'Land volume');
         const parsedLatitude = parseCoordinate(latitude, 'Latitude');
         const parsedLongitude = parseCoordinate(longitude, 'Longitude');
         validateCoordinateRange(parsedLatitude, parsedLongitude);
+        validateIndiaCoordinates(parsedLatitude, parsedLongitude);
 
         const existingCrop = await prisma.$queryRawUnsafe<CropRow[]>(
             `SELECT * FROM "Crop" WHERE "id" = ? AND "userId" = ? LIMIT 1`,

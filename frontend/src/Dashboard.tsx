@@ -135,7 +135,9 @@ export default function Dashboard() {
         navigate('/login');
     };
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = async (e: React.MouseEvent, id: number) => {
+        e.stopPropagation();
+        e.preventDefault();
         if (!confirm('Are you sure you want to delete this crop?')) return;
         try {
             const token = localStorage.getItem('token');
@@ -367,7 +369,7 @@ export default function Dashboard() {
                                                                     <Button variant="ghost" size="icon" className="h-10 w-10 hover:bg-background/80" onClick={() => navigate(`/edit-crop/${crop.id}`)}>
                                                                         <Pencil className="h-5 w-5 text-muted-foreground hover:text-primary" />
                                                                     </Button>
-                                                                    <Button variant="ghost" size="icon" className="h-10 w-10 hover:bg-background/80" onClick={() => handleDelete(crop.id)}>
+                                                                    <Button variant="ghost" size="icon" className="h-10 w-10 hover:bg-background/80" onClick={(e) => handleDelete(e, crop.id)}>
                                                                         <Trash2 className="h-5 w-5 text-muted-foreground hover:text-destructive" />
                                                                     </Button>
                                                                 </div>

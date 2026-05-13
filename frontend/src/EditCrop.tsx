@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Sprout } from 'lucide-react';
-import { COUNTRIES, INDIAN_STATES_AND_DISTRICTS } from './lib/locationData';
+import { INDIAN_STATES_AND_DISTRICTS } from './lib/locationData';
 
 export default function EditCrop() {
     const navigate = useNavigate();
@@ -17,7 +17,7 @@ export default function EditCrop() {
         landVolume: '',
         landUnit: 'Acres',
         phase: 'Initial Stage',
-        country: '',
+        country: 'India',
         state: '',
         district: '',
         place: '',
@@ -25,9 +25,12 @@ export default function EditCrop() {
         longitude: ''
     });
 
-    const [states, setStates] = useState<string[]>([]);
+    const [states] = useState<string[]>(Object.keys(INDIAN_STATES_AND_DISTRICTS).sort());
     const [districts, setDistricts] = useState<string[]>([]);
-    const [showIndianFields, setShowIndianFields] = useState(false);
+    const [geoError, setGeoError] = useState<string | null>(null);
+
+    // India bounding box: lat 6.5–35.7, lon 68.1–97.4
+    const INDIA_BOUNDS = { latMin: 6.5, latMax: 35.7, lonMin: 68.1, lonMax: 97.4 };
 
     // Fetch crop data
     useEffect(() => {
@@ -48,7 +51,7 @@ export default function EditCrop() {
                             landVolume: crop.landVolume.toString(),
                             landUnit: crop.landUnit,
                             phase: crop.phase,
-                            country: crop.country,
+                            country: 'India',
                             state: crop.state || '',
                             district: crop.district || '',
                             place: crop.place,
@@ -56,10 +59,7 @@ export default function EditCrop() {
                             longitude: crop.longitude?.toString() || ''
                         });
 
-                        // Trigger logic for states/districts dependent on country/state
-                        if (crop.country === 'India') {
-                            setShowIndianFields(true);
-                        }
+
                     } else {
                         alert('Crop not found');
                         navigate('/dashboard');
@@ -77,27 +77,30 @@ export default function EditCrop() {
         }
     }, [id, navigate]);
 
-    // Effect to handle country selection
-    useEffect(() => {
-        if (formData.country === 'India') {
-            setShowIndianFields(true);
-            setStates(Object.keys(INDIAN_STATES_AND_DISTRICTS).sort());
-        } else {
-            setShowIndianFields(false);
-            setStates([]);
-            setDistricts([]);
-        }
-    }, [formData.country]);
-
     // Effect to handle state selection
     useEffect(() => {
-        if (formData.country === 'India' && formData.state) {
+        if (formData.state) {
             const districtList = INDIAN_STATES_AND_DISTRICTS[formData.state] || [];
             setDistricts(districtList.sort());
         } else {
             setDistricts([]);
         }
-    }, [formData.state, formData.country]);
+    }, [formData.state]);
+
+    // Validate geocode is within India
+    useEffect(() => {
+        const lat = parseFloat(formData.latitude);
+        const lon = parseFloat(formData.longitude);
+        if (formData.latitude && formData.longitude && Number.isFinite(lat) && Number.isFinite(lon)) {
+            if (lat < INDIA_BOUNDS.latMin || lat > INDIA_BOUNDS.latMax || lon < INDIA_BOUNDS.lonMin || lon > INDIA_BOUNDS.lonMax) {
+                setGeoError('Coordinates are outside India. AgroIntel currently supports Indian locations only.');
+            } else {
+                setGeoError(null);
+            }
+        } else {
+            setGeoError(null);
+        }
+    }, [formData.latitude, formData.longitude]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -106,6 +109,10 @@ export default function EditCrop() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (geoError) {
+            alert(geoError);
+            return;
+        }
         setLoading(true);
 
         try {
@@ -224,59 +231,38 @@ export default function EditCrop() {
                             <h3 className="text-xl md:text-2xl font-semibold mb-6">Location Details</h3>
                             <div className="grid gap-6 md:grid-cols-2 md:gap-8">
                                 <div className="space-y-3">
-                                    <Label htmlFor="country" className="text-lg font-medium">Country</Label>
+                                    <Label htmlFor="state" className="text-lg font-medium">State</Label>
                                     <select
-                                        id="country"
-                                        name="country"
+                                        id="state"
+                                        name="state"
                                         className={inputClasses}
-                                        value={formData.country}
+                                        value={formData.state}
                                         onChange={handleChange}
                                         required
                                     >
-                                        <option value="">Select Country</option>
-                                        {COUNTRIES.map(country => (
-                                            <option key={country} value={country}>{country}</option>
+                                        <option value="">Select State</option>
+                                        {states.map(state => (
+                                            <option key={state} value={state}>{state}</option>
                                         ))}
                                     </select>
                                 </div>
-
-                                {showIndianFields && (
-                                    <>
-                                        <div className="space-y-3">
-                                            <Label htmlFor="state" className="text-lg font-medium">State</Label>
-                                            <select
-                                                id="state"
-                                                name="state"
-                                                className={inputClasses}
-                                                value={formData.state}
-                                                onChange={handleChange}
-                                                required
-                                            >
-                                                <option value="">Select State</option>
-                                                {states.map(state => (
-                                                    <option key={state} value={state}>{state}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div className="space-y-3">
-                                            <Label htmlFor="district" className="text-lg font-medium">District</Label>
-                                            <select
-                                                id="district"
-                                                name="district"
-                                                className={inputClasses}
-                                                value={formData.district}
-                                                onChange={handleChange}
-                                                required
-                                                disabled={!formData.state}
-                                            >
-                                                <option value="">Select District</option>
-                                                {districts.map(district => (
-                                                    <option key={district} value={district}>{district}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    </>
-                                )}
+                                <div className="space-y-3">
+                                    <Label htmlFor="district" className="text-lg font-medium">District</Label>
+                                    <select
+                                        id="district"
+                                        name="district"
+                                        className={inputClasses}
+                                        value={formData.district}
+                                        onChange={handleChange}
+                                        required
+                                        disabled={!formData.state}
+                                    >
+                                        <option value="">Select District</option>
+                                        {districts.map(district => (
+                                            <option key={district} value={district}>{district}</option>
+                                        ))}
+                                    </select>
+                                </div>
                                 <div className="space-y-3">
                                     <Label htmlFor="place" className="text-lg font-medium">Place (Specific Location)</Label>
                                     <Input
@@ -319,6 +305,11 @@ export default function EditCrop() {
                                     <p className="text-sm text-muted-foreground">
                                         Keep the crop geocode accurate so market matching stays local.
                                     </p>
+                                    {geoError && (
+                                        <p className="text-sm text-red-500 font-medium mt-1">
+                                            ⚠️ {geoError}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>

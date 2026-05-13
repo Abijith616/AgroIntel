@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { MarketService } from '../services/market.service';
+import { SupplyDemandService } from '../services/supply-demand.service';
 
 // Rough state centroid coordinates for when user doesn't provide lat/lon
 const STATE_COORDS: Record<string, { lat: number; lon: number }> = {
@@ -84,5 +85,30 @@ export const getMarketTrend = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error('Market trend fetch error:', error);
         res.status(500).json({ error: 'Failed to fetch market trend', message: error.message });
+    }
+};
+
+export const getSupplyDemand = async (req: Request, res: Response) => {
+    try {
+        const { crop, scope, state } = req.query;
+        const cropName = (crop as string) || 'Rice';
+        const dataScope = (scope as 'global' | 'local') || 'global';
+        const stateName = (state as string) || 'Kerala';
+
+        const data = await SupplyDemandService.getSupplyDemand(cropName, dataScope, stateName);
+
+        if (!data) {
+            res.status(404).json({
+                error: 'No supply-demand data available for this crop',
+                crop: cropName,
+                scope: dataScope,
+            });
+            return;
+        }
+
+        res.json(data);
+    } catch (error: any) {
+        console.error('Supply-demand fetch error:', error);
+        res.status(500).json({ error: 'Failed to fetch supply-demand data', message: error.message });
     }
 };

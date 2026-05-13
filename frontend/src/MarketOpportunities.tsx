@@ -5,7 +5,7 @@ import {
     ArrowLeft, TrendingUp, TrendingDown, Minus,
     MapPin, Truck, Sparkles, Leaf, DollarSign,
     BarChart3, AlertCircle, RefreshCw, Star, Wheat,
-    Store, ShoppingBasket, MapPinned, Info, ExternalLink
+    Store, ShoppingBasket, MapPinned, ExternalLink
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

@@ -4,7 +4,8 @@ import { motion } from "framer-motion";
 import {
     ArrowLeft, BarChart3, Leaf, Loader2,
     RefreshCw, MapPin, Brain, Sparkles,
-    ArrowRight, Wifi, WifiOff, Truck, Clock3, Store, Trophy
+    ArrowRight, Truck, Clock3, Store, Trophy,
+    Globe, MapPinIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -48,10 +49,42 @@ interface MarketPricesResponse {
     alternativeMarkets: MarketEntry[];
 }
 
+interface SupplyDemandData {
+    crop: string;
+    scope: "global" | "local";
+    supply: number;
+    demand: number;
+    unit: string;
+    supplyLabel: string;
+    demandLabel: string;
+    year: string;
+    source: string;
+    ratio: number;
+    lastUpdated: string;
+    mode: "official_snapshot" | "hybrid_live_estimate";
+    supplyTitle: string;
+    demandTitle: string;
+    summary: string;
+    freshnessLabel: string;
+    methodology: string;
+    baselineYear: string;
+    baselineSource: string;
+    latestMarketDate?: string | null;
+    liveSignals?: {
+        liveDataUsed: boolean;
+        recordsAnalyzed: number;
+        reportingDays: number;
+        latestAvgPrice: number | null;
+        previousAvgPrice: number | null;
+        priceMomentumPct: number | null;
+        priceVsMspPct: number | null;
+    };
+}
+
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
-const getSignalTone = (source: TrendResponse["source"], momentum: number) => {
+const getSignalTone = (momentum: number) => {
     if (Math.abs(momentum) >= 2) {
         return { label: "Strong Signal", tone: "text-emerald-700 bg-emerald-50 border-emerald-200" };
     }
@@ -61,7 +94,7 @@ const getSignalTone = (source: TrendResponse["source"], momentum: number) => {
     return { label: "Weak Signal", tone: "text-slate-700 bg-slate-50 border-slate-200" };
 };
 
-const getSourceLabel = (source: MarketEntry["priceSource"]) => {
+const getSourceLabel = (_source: MarketEntry["priceSource"]) => {
     return "Live";
 };
 
@@ -77,6 +110,9 @@ export default function MarketIntelligence() {
     const [pathwaysLoading, setPathwaysLoading] = useState(false);
     const [priceData, setPriceData] = useState<MarketPricesResponse | null>(null);
     const [trendData, setTrendData] = useState<TrendResponse | null>(null);
+    const [supplyDemandScope, setSupplyDemandScope] = useState<"global" | "local">("global");
+    const [supplyDemandData, setSupplyDemandData] = useState<SupplyDemandData | null>(null);
+    const [sdLoading, setSdLoading] = useState(false);
 
     useEffect(() => {
         const fetchCrops = async () => {
@@ -149,6 +185,34 @@ export default function MarketIntelligence() {
         fetchPathwayInputs();
     }, [selectedCrop]);
 
+    // Fetch supply-demand data when crop or scope changes
+    useEffect(() => {
+        if (!selectedCrop) return;
+
+        const fetchSupplyDemand = async () => {
+            try {
+                setSdLoading(true);
+                const params = new URLSearchParams({
+                    crop: selectedCrop.name,
+                    scope: supplyDemandScope,
+                    state: selectedCrop.state,
+                });
+                const res = await fetch(`http://localhost:3000/api/market/supply-demand?${params}`);
+                if (res.ok) {
+                    setSupplyDemandData(await res.json());
+                } else {
+                    setSupplyDemandData(null);
+                }
+            } catch {
+                setSupplyDemandData(null);
+            } finally {
+                setSdLoading(false);
+            }
+        };
+
+        fetchSupplyDemand();
+    }, [selectedCrop, supplyDemandScope]);
+
     const localMarket = priceData?.nearestMarket ?? null;
     const bestNearbyMarket = priceData
         ? [priceData.nearestMarket, ...priceData.alternativeMarkets].reduce((best, market) =>
@@ -165,7 +229,7 @@ export default function MarketIntelligence() {
     const projectedWaitPrice = latestLocalPrice != null
         ? Math.max(0, Math.round(latestLocalPrice + dailyMomentum * 7))
         : null;
-    const signal = trendData ? getSignalTone(trendData.source, dailyMomentum) : null;
+    const signal = trendData ? getSignalTone(dailyMomentum) : null;
     const localToBestGain = localMarket && bestNearbyMarket
         ? bestNearbyMarket.price - localMarket.price - Math.round(bestNearbyMarket.distance * 1.5)
         : null;
@@ -270,6 +334,145 @@ export default function MarketIntelligence() {
                             </Card>
                         </motion.div>
 
+                        {/* Supply & Demand Card */}
+                        <motion.div variants={item}>
+                            <Card className="shadow-sm border-slate-200 overflow-hidden">
+                                <CardHeader className="px-8 pt-8 pb-4">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <CardTitle className="flex items-center gap-3 text-2xl">
+                                                <BarChart3 className="h-7 w-7 text-violet-600" />
+                                                Supply & Demand
+                                            </CardTitle>
+                                            <CardDescription className="text-base mt-1">
+                                                {supplyDemandScope === "global"
+                                                    ? `Latest official world production vs consumption snapshot — ${selectedCrop.name}`
+                                                    : `Hybrid India signal: official baseline plus recent mandi pressure — ${selectedCrop.name}`}
+                                            </CardDescription>
+                                        </div>
+                                        <div className="flex items-center gap-1 bg-muted/60 rounded-xl p-1">
+                                            <button
+                                                onClick={() => setSupplyDemandScope("global")}
+                                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                                    supplyDemandScope === "global"
+                                                        ? "bg-white shadow-sm text-foreground"
+                                                        : "text-muted-foreground hover:text-foreground"
+                                                }`}
+                                            >
+                                                <Globe className="h-4 w-4" />
+                                                Global
+                                            </button>
+                                            <button
+                                                onClick={() => setSupplyDemandScope("local")}
+                                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                                    supplyDemandScope === "local"
+                                                        ? "bg-white shadow-sm text-foreground"
+                                                        : "text-muted-foreground hover:text-foreground"
+                                                }`}
+                                            >
+                                                <MapPinIcon className="h-4 w-4" />
+                                                India
+                                            </button>
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="px-8 pb-8">
+                                    {sdLoading ? (
+                                        <div className="flex items-center justify-center py-12">
+                                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                                        </div>
+                                    ) : !supplyDemandData ? (
+                                        <div className="rounded-2xl border border-dashed bg-muted/20 px-6 py-10 text-center">
+                                            <p className="font-semibold text-foreground">No data available</p>
+                                            <p className="text-sm text-muted-foreground mt-2">
+                                                Supply & demand data is not available for this crop.
+                                            </p>
+                                        </div>
+                                    ) : (() => {
+                                        const maxVal = Math.max(supplyDemandData.supply, supplyDemandData.demand);
+                                        const supplyPct = (supplyDemandData.supply / maxVal) * 100;
+                                        const demandPct = (supplyDemandData.demand / maxVal) * 100;
+                                        const isSurplus = supplyDemandData.ratio >= 1;
+
+                                        return (
+                                            <div className="space-y-6">
+                                                {/* Supply Bar */}
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-semibold text-slate-600 uppercase tracking-wider">{supplyDemandData.supplyTitle}</span>
+                                                        <span className="text-lg font-bold text-blue-700">{supplyDemandData.supplyLabel} T</span>
+                                                    </div>
+                                                    <div className="h-8 w-full bg-slate-100 rounded-xl overflow-hidden relative">
+                                                        <motion.div
+                                                            className="h-full rounded-xl bg-gradient-to-r from-blue-500 to-blue-600"
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${supplyPct}%` }}
+                                                            transition={{ duration: 0.8, ease: "easeOut" }}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Demand Bar */}
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-semibold text-slate-600 uppercase tracking-wider">{supplyDemandData.demandTitle}</span>
+                                                        <span className="text-lg font-bold text-orange-600">{supplyDemandData.demandLabel} T</span>
+                                                    </div>
+                                                    <div className="h-8 w-full bg-slate-100 rounded-xl overflow-hidden relative">
+                                                        <motion.div
+                                                            className="h-full rounded-xl bg-gradient-to-r from-orange-400 to-orange-500"
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${demandPct}%` }}
+                                                            transition={{ duration: 0.8, ease: "easeOut", delay: 0.15 }}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Ratio Badge */}
+                                                <div className="flex items-center justify-between pt-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={`text-sm px-3 py-1 ${
+                                                                isSurplus
+                                                                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                                                    : "border-red-200 bg-red-50 text-red-700"
+                                                            }`}
+                                                        >
+                                                            {isSurplus ? "Surplus" : "Deficit"} — {supplyDemandData.ratio.toFixed(2)}x ratio
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+
+                                                <div className="rounded-xl border bg-slate-50/70 px-4 py-3 space-y-2">
+                                                    <p className="text-sm text-slate-700">{supplyDemandData.summary}</p>
+                                                    {supplyDemandData.liveSignals?.liveDataUsed && (
+                                                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                                                            <span>{supplyDemandData.liveSignals.recordsAnalyzed} mandi records</span>
+                                                            <span>{supplyDemandData.liveSignals.reportingDays} reporting days</span>
+                                                            {supplyDemandData.liveSignals.priceMomentumPct != null && (
+                                                                <span>
+                                                                    14-day price momentum {supplyDemandData.liveSignals.priceMomentumPct > 0 ? "+" : ""}
+                                                                    {supplyDemandData.liveSignals.priceMomentumPct}%
+                                                                </span>
+                                                            )}
+                                                            {supplyDemandData.liveSignals.latestAvgPrice != null && (
+                                                                <span>Latest avg price ₹{supplyDemandData.liveSignals.latestAvgPrice.toLocaleString("en-IN")}/qt</span>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <p className="text-[11px] text-muted-foreground/60 pt-1">
+                                                    Source: {supplyDemandData.source}
+                                                </p>
+                                            </div>
+                                        );
+                                    })()}
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+
                         <motion.div variants={item}>
                             <Card className="shadow-sm border-slate-200 overflow-hidden">
                                 <CardHeader className="px-8 pt-8 pb-4">
@@ -302,6 +505,17 @@ export default function MarketIntelligence() {
                                         </div>
                                     ) : (
                                         <>
+                                            {signal && (
+                                                <div className="mb-5 flex items-center gap-3">
+                                                    <Badge variant="outline" className={signal.tone}>
+                                                        {signal.label}
+                                                    </Badge>
+                                                    <span className="text-sm text-muted-foreground">
+                                                        Based on the latest local price slope across the recent trend window.
+                                                    </span>
+                                                </div>
+                                            )}
+
                                             <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
                                                 <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
                                                     <div className="flex items-center justify-between gap-3 mb-4">

@@ -40,7 +40,9 @@ export default function TaskPage() {
         localStorage.setItem('agrointel_tasks', JSON.stringify(newTasks));
     };
 
-    const deleteTask = (taskId: string) => {
+    const deleteTask = (e: React.MouseEvent, taskId: string) => {
+        e.stopPropagation();
+        e.preventDefault();
         const newTasks = tasks.filter(t => t.id !== taskId);
         setTasks(newTasks);
         localStorage.setItem('agrointel_tasks', JSON.stringify(newTasks));
@@ -134,7 +136,7 @@ export default function TaskPage() {
                                                     variant="outline" 
                                                     size="icon" 
                                                     className="shrink-0 h-10 w-10 text-muted-foreground hover:text-red-600 hover:bg-red-50 border-muted"
-                                                    onClick={() => deleteTask(task.id)}
+                                                    onClick={(e) => deleteTask(e, task.id)}
                                                 >
                                                     <Trash2 className="h-5 w-5" />
                                                 </Button>

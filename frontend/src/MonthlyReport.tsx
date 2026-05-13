@@ -101,7 +101,9 @@ export default function MonthlyReport() {
         fetchReport();
     }, [fetchReport, navigate]);
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = async (e: React.MouseEvent, id: number) => {
+        e.stopPropagation();
+        e.preventDefault();
         if (!confirm("Delete this expense?")) return;
         setDeletingId(id);
         try {
@@ -435,7 +437,7 @@ export default function MonthlyReport() {
                                             <div className="flex items-center gap-3">
                                                 <span className="font-bold text-gray-900 text-base">₹{exp.amount.toLocaleString()}</span>
                                                 <button
-                                                    onClick={() => handleDelete(exp.id)}
+                                                    onClick={(e) => handleDelete(e, exp.id)}
                                                     disabled={deletingId === exp.id}
                                                     className="opacity-0 group-hover:opacity-100 h-8 w-8 rounded-lg hover:bg-red-50 flex items-center justify-center text-gray-400 hover:text-red-600 transition-all print:hidden"
                                                 >

@@ -53,7 +53,7 @@ export class GeminiMarketService {
         district?: string;
         place?: string;
     }): Promise<GeminiMarketCandidate[]> {
-        const apiKey = process.env.GEMINI_API_KEY;
+        const apiKey = process.env.GEMINI_API_KEY_MARKETS;
         if (!apiKey) {
             return [];
         }
