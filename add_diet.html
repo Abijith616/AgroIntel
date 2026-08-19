@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meridian — Add Diet Plan</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Mock Device Viewport -->
+  <div class="phone-viewport">
+    
+    <!-- Header with Back Button and Title -->
+    <div class="subpage-header">
+      <a href="diet.html" class="back-btn" id="back-to-diet-btn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+      </a>
+      <h1 class="subpage-title">Add Diet Plan</h1>
+    </div>
+
+    <!-- Segmented Tab Controls -->
+    <div class="segmented-control">
+      <button class="segment-btn" id="predefined-tab">Predefined</button>
+      <button class="segment-btn active" id="custom-tab">Custom</button>
+    </div>
+
+    <!-- Meal Card Slots -->
+    <div class="meal-slots-container">
+      <div class="meal-slot-card">
+        <div class="meal-slot-left">
+          <div class="meal-slot-icon">🍳</div>
+          <span class="meal-slot-name">Breakfast</span>
+        </div>
+        <button class="menu-dots-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="1"></circle>
+            <circle cx="19" cy="12" r="1"></circle>
+            <circle cx="5" cy="12" r="1"></circle>
+          </svg>
+        </button>
+      </div>
+
+      <div class="meal-slot-card">
+        <div class="meal-slot-left">
+          <div class="meal-slot-icon">🍗</div>
+          <span class="meal-slot-name">Lunch</span>
+        </div>
+        <button class="menu-dots-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="1"></circle>
+            <circle cx="19" cy="12" r="1"></circle>
+            <circle cx="5" cy="12" r="1"></circle>
+          </svg>
+        </button>
+      </div>
+
+      <div class="meal-slot-card">
+        <div class="meal-slot-left">
+          <div class="meal-slot-icon">🍲</div>
+          <span class="meal-slot-name">Dinner</span>
+        </div>
+        <button class="menu-dots-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="1"></circle>
+            <circle cx="19" cy="12" r="1"></circle>
+            <circle cx="5" cy="12" r="1"></circle>
+          </svg>
+        </button>
+      </div>
+
+      <div class="meal-slot-card">
+        <div class="meal-slot-left">
+          <div class="meal-slot-icon">🥗</div>
+          <span class="meal-slot-name">Snacks</span>
+        </div>
+        <button class="menu-dots-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="1"></circle>
+            <circle cx="19" cy="12" r="1"></circle>
+            <circle cx="5" cy="12" r="1"></circle>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Save Action Button -->
+    <button class="large-btn" id="save-diet-plan-btn" style="margin-top: auto;">Save Plan</button>
+
+  </div>
+
+  <script>
+    // Simple page navigation logic for subpage
+    document.getElementById('back-to-diet-btn').addEventListener('click', (e) => {
+      e.preventDefault();
+      // Back to where we came from, or custom state if it was stored
+      const prevIsCustom = localStorage.getItem('diet_is_custom') === 'true';
+      window.location.href = prevIsCustom ? 'diet_custom.html' : 'diet.html';
+    });
+
+    document.getElementById('save-diet-plan-btn').addEventListener('click', () => {
+      // Simulate toast
+      const toast = document.createElement('div');
+      toast.className = 'toast show';
+      toast.innerText = 'Plan saved successfully!';
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+        const prevIsCustom = localStorage.getItem('diet_is_custom') === 'true';
+        window.location.href = prevIsCustom ? 'diet_custom.html' : 'diet.html';
+      }, 1000);
+    });
+
+    // Handle segment tab switching
+    const predefinedTab = document.getElementById('predefined-tab');
+    const customTab = document.getElementById('custom-tab');
+
+    predefinedTab.addEventListener('click', () => {
+      predefinedTab.classList.add('active');
+      customTab.classList.remove('active');
+      localStorage.setItem('diet_is_custom', 'false');
+      // Toast notification
+      showToast('Switched to Predefined Mode template');
+    });
+
+    customTab.addEventListener('click', () => {
+      customTab.classList.add('active');
+      predefinedTab.classList.remove('active');
+      localStorage.setItem('diet_is_custom', 'true');
+      showToast('Switched to Custom Mode template');
+    });
+
+    function showToast(msg) {
+      const toast = document.createElement('div');
+      toast.className = 'toast show';
+      toast.innerText = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 1500);
+    }
+  </script>
+</body>
+</html>

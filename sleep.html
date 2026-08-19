@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meridian — Sleep</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Mock Device Viewport -->
+  <div class="phone-viewport">
+    
+    <!-- Backdrop overlay for popovers -->
+    <div class="backdrop" id="page-backdrop"></div>
+
+    <!-- Account Popover Menu -->
+    <div class="popover-container" id="popover-menu">
+      <div class="popover-header">
+        <div class="popover-avatar">A</div>
+        <div class="popover-user-info">
+          <div class="popover-username">Abijith</div>
+          <div class="popover-streak">47-day streak · Level 3</div>
+        </div>
+      </div>
+      <div class="popover-menu">
+        <a href="add_diet.html" class="popover-row">
+          <div class="popover-icon-box green">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </div>
+          <div class="popover-row-content">
+            <div class="popover-row-title">Add Diet Plan</div>
+          </div>
+        </a>
+        <div class="popover-row">
+          <div class="popover-icon-box gold">🏆</div>
+          <div class="popover-row-content">
+            <div class="popover-row-title">Add Workout Plan</div>
+          </div>
+        </div>
+        <div class="popover-row">
+          <div class="popover-icon-box blue">🌙</div>
+          <div class="popover-row-content">
+            <div class="popover-row-title">Add Sleep Schedule</div>
+          </div>
+        </div>
+        <div class="popover-row">
+          <div class="popover-icon-box purple">🔄</div>
+          <div class="popover-row-content">
+            <div class="popover-row-title">Switch Plan</div>
+            <div class="popover-row-desc">Diet · Workout · Sleep</div>
+          </div>
+        </div>
+        
+        <div class="popover-divider"></div>
+        
+        <div class="popover-row">
+          <div class="popover-icon-box blue">📥</div>
+          <div class="popover-row-content">
+            <div class="popover-row-title blue">Download Progress Report</div>
+            <div class="popover-row-desc">Export CSV / PDF for Claude</div>
+          </div>
+        </div>
+        
+        <div class="popover-divider"></div>
+        
+        <div class="popover-row">
+          <div class="popover-icon-box red">🚪</div>
+          <div class="popover-row-content">
+            <div class="popover-row-title red">Log Out</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Looping Carousel -->
+    <div class="carousel-container">
+
+      <!-- ==================== SCREEN 0: SLEEP CLONE ==================== -->
+      <section class="screen" id="screen-sleep-clone">
+        <div class="header">
+          <div class="streak-pill">🔥 47</div>
+          <div class="avatar-btn">A</div>
+        </div>
+        
+        <div class="title-row">
+          <h1 class="screen-title">SLEEP</h1>
+        </div>
+
+        <div class="sleep-duration-container">
+          <div class="sleep-hours">7h 42m</div>
+          <div class="sleep-score">Good sleep · Quality score 84</div>
+        </div>
+
+        <div class="sleep-stages-section">
+          <div class="section-label">Sleep Stages</div>
+          <div class="stages-bar">
+            <div class="stage-segment deep"></div>
+            <div class="stage-segment rem"></div>
+            <div class="stage-segment light"></div>
+            <div class="stage-segment awake"></div>
+          </div>
+          <div class="stages-labels">
+            <div class="stage-label-item">
+              <span class="stage-dot deep"></span> Deep 22%
+            </div>
+            <div class="stage-label-item">
+              <span class="stage-dot rem"></span> REM 28%
+            </div>
+            <div class="stage-label-item">
+              <span class="stage-dot light"></span> Light 42%
+            </div>
+            <div class="stage-label-item">
+              <span class="stage-dot awake"></span> Awake 8%
+            </div>
+          </div>
+        </div>
+
+        <div class="this-week-section">
+          <div class="section-label">This Week</div>
+          <div class="sleep-chart-row">
+            <div class="chart-bar-container">
+              <div class="chart-bar-track"><div class="chart-bar-fill" style="height: 60%;"></div></div>
+              <div class="chart-day-label">M</div>
+            </div>
+            <div class="chart-bar-container">
+              <div class="chart-bar-track"><div class="chart-bar-fill" style="height: 60%;"></div></div>
+              <div class="chart-day-label">T</div>
+            </div>
+            <div class="chart-bar-container">
+              <div class="chart-bar-track"><div class="chart-bar-fill" style="height: 45%;"></div></div>
+              <div class="chart-day-label">W</div>
+            </div>
+            <div class="chart-bar-container">
+              <div class="chart-bar-track"><div class="chart-bar-fill" style="height: 80%;"></div></div>
+              <div class="chart-day-label">T</div>
+            </div>
+            <div class="chart-bar-container">
+              <div class="chart-bar-track"><div class="chart-bar-fill" style="height: 65%;"></div></div>
+              <div class="chart-day-label">F</div>
+            </div>
+            <div class="chart-bar-container">
+              <div class="chart-bar-track"><div class="chart-bar-fill" style="height: 90%;"></div></div>
+              <div class="chart-day-label">S</div>
+            </div>
+            <div class="chart-bar-container">
+              <div class="chart-bar-track"><div class="chart-bar-fill active" style="height: 72%;"></div></div>
+              <div class="chart-day-label active">S</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card bedtime-card">
+          <div class="bedtime-icon-circle">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          </div>
+          <div class="bedtime-info">
+            <div class="bedtime-time">Next bedtime: 10:30 PM</div>
+            <div class="bedtime-desc">Keeps your recovery on track</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SCREEN 1: HOME ==================== -->
+      <section class="screen" id="screen-home">
+        <div class="header">
+          <div class="streak-pill">🔥 47</div>
+          <div class="avatar-btn">A</div>
+        </div>
+
+        <!-- Central Momentum Circle -->
+        <div class="circle-progress-container">
+          <svg class="circle-svg" width="200" height="200">
+            <!-- Background circle track -->
+            <circle class="circle-bg" cx="100" cy="100" r="85"></circle>
+            <!-- Mint green (Positive) progress bar -->
+            <circle class="circle-bar" cx="100" cy="100" r="85" 
+                    stroke="var(--color-mint)" 
+                    stroke-dasharray="534" 
+                    stroke-dashoffset="171"></circle> <!-- 68% of 534 is ~363. Stroke-dashoffset = 534 - 363 = 171 -->
+            <!-- Coral (Negative) progress offset -->
+            <circle class="circle-bar" cx="100" cy="100" r="85" 
+                    stroke="var(--color-coral)" 
+                    stroke-dasharray="534" 
+                    stroke-dashoffset="363" 
+                    transform="rotate(244.8 100 100)"></circle> <!-- Starts where mint ends: 360 * 0.68 = 244.8deg. Length is 32% of 534 ~ 171. Offset = 534 - 171 = 363 -->
+          </svg>
+          <div class="circle-text-container">
+            <div class="circle-number">68%</div>
+            <div class="circle-label">MOMENTUM</div>
+          </div>
+        </div>
+
+        <!-- This Week Rings -->
+        <div class="this-week-section">
+          <div class="section-label">This Week</div>
+          <div class="days-row">
+            <div class="day-item">
+              <div class="day-circle">
+                <svg width="32" height="32" viewBox="0 0 32 32">
+                  <circle cx="16" cy="16" r="12" fill="none" stroke="#16181E" stroke-width="2.5"></circle>
+                  <circle cx="16" cy="16" r="12" fill="none" stroke="var(--color-mint)" stroke-width="2.5" stroke-dasharray="75.4" stroke-dashoffset="0"></circle>
+                </svg>
+              </div>
+              <div class="day-label">M</div>
+            </div>
+            <div class="day-item">
+              <div class="day-circle">
+                <svg width="32" height="32" viewBox="0 0 32 32">
+                  <circle cx="16" cy="16" r="12" fill="none" stroke="#16181E" stroke-width="2.5"></circle>
+                  <circle cx="16" cy="16" r="12" fill="none" stroke="var(--color-mint)" stroke-width="2.5" stroke-dasharray="75.4" stroke-dashoffset="15" stroke-linecap="round"></circle>
+                </svg>
+              </div>
+              <div class="day-label">T</div>
+            </div>
+            <div class="day-item">
+              <div class="day-circle">
+                <svg width="32" height="32" viewBox="0 0 32 32">
+                  <circle cx="16" cy="16" r="12" fill="none" stroke="#16181E" stroke-width="2.5"></circle>
+                  <circle cx="16" cy="16" r="12" fill="none" stroke="var(--color-coral)" stroke-width="2.5" stroke-dasharray="75.4" stroke-dashoffset="25" stroke-linecap="round"></circle>
+                </svg>
+              </div>
+              <div class="day-label">W</div>
+            </div>
+            <div class="day-item">
+              <div class="day-circle">
+                <svg width="32" height="32" viewBox="0 0 32 32">
+                  <circle cx="16" cy="16" r="12" fill="none" stroke="#16181E" stroke-width="2.5"></circle>
+                  <circle cx="16" cy="16" r="12" fill="none" stroke="var(--color-mint)" stroke-width="2.5" stroke-dasharray="75.4" stroke-dashoffset="0"></circle>
+                </svg>
+              </div>
+              <div class="day-label">T</div>
+            </div>
+            <div class="day-item">
+              <div class="day-circle">
+                <svg width="32" height="32" viewBox="0 0 32 32">
+                  <circle cx="16" cy="16" r="12" fill="none" stroke="#16181E" stroke-width="2.5"></circle>
+                  <circle cx="16" cy="16" r="12" fill="none" stroke="var(--color-mint)" stroke-width="2.5" stroke-dasharray="75.4" stroke-dashoffset="20" stroke-linecap="round"></circle>
+                </svg>
+              </div>
+              <div class="day-label">F</div>
+            </div>
+            <div class="day-item">
+              <div class="day-circle">
+                <svg width="32" height="32" viewBox="0 0 32 32">
+                  <circle cx="16" cy="16" r="12" fill="none" stroke="#16181E" stroke-width="2.5"></circle>
+                  <circle cx="16" cy="16" r="12" fill="none" stroke="var(--color-mint)" stroke-width="2.5" stroke-dasharray="75.4" stroke-dashoffset="5" stroke-linecap="round"></circle>
+                </svg>
+              </div>
+              <div class="day-label">S</div>
+            </div>
+            <div class="day-item">
+              <div class="day-circle">
+                <svg width="32" height="32" viewBox="0 0 32 32">
+                  <circle cx="16" cy="16" r="12" fill="none" stroke="#16181E" stroke-width="2.5"></circle>
+                  <circle cx="16" cy="16" r="12" fill="none" stroke="var(--color-blue)" stroke-width="2.5" stroke-dasharray="75.4" stroke-dashoffset="30" stroke-linecap="round"></circle>
+                </svg>
+              </div>
+              <div class="day-label active">S</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Water Tracker Card -->
+        <div class="card water-card">
+          <div class="water-left">
+            <div class="water-icon-circle">💧</div>
+            <div class="water-info">
+              <div class="water-qty"><strong>1,200</strong> / 2,500 ml</div>
+              <div class="water-action">Tap to log a glass</div>
+            </div>
+          </div>
+          <button class="plus-btn">+</button>
+        </div>
+
+        <!-- Next Up Card -->
+        <div class="card next-up-card">
+          <div class="next-up-tag">Next Up</div>
+          <div class="next-up-title">Leg Day — 6:00 PM</div>
+        </div>
+      </section>
+
+      <!-- ==================== SCREEN 2: DIET ==================== -->
+      <section class="screen" id="screen-diet">
+        <div class="header">
+          <div class="streak-pill">🔥 47</div>
+          <div class="avatar-btn">A</div>
+        </div>
+
+        <div class="title-row">
+          <h1 class="screen-title">DIET</h1>
+          <div class="toggle-container" id="diet-custom-toggle">
+            <span class="toggle-label">Custom</span>
+            <div class="toggle-track"><div class="toggle-thumb"></div></div>
+          </div>
+        </div>
+
+        <!-- Calorie Circle -->
+        <div class="circle-progress-container">
+          <svg class="circle-svg" width="180" height="180">
+            <circle class="circle-bg" cx="90" cy="90" r="75"></circle>
+            <circle class="circle-bar" cx="90" cy="90" r="75" 
+                    stroke="var(--color-orange)" 
+                    stroke-dasharray="471" 
+                    stroke-dashoffset="75"></circle> <!-- ~1,840/2,200 kcal is 83.6%. Stroke-dashoffset = 471 - 394 = 77 -->
+          </svg>
+          <div class="circle-text-container">
+            <div class="circle-number" style="font-size: 34px;">1,840</div>
+            <div class="circle-label" style="text-transform: none; font-weight: 500; font-family: var(--font-body);">of 2,200 kcal</div>
+          </div>
+        </div>
+
+        <!-- Macronutrient Bars -->
+        <div class="macro-section">
+          <div class="macro-item">
+            <div class="macro-header">
+              <span class="macro-name">PROTEIN</span>
+              <span class="macro-value">142g / 180g</span>
+            </div>
+            <div class="macro-track">
+              <div class="macro-bar protein" style="width: 78.8%;"></div>
+            </div>
+          </div>
+          <div class="macro-item">
+            <div class="macro-header">
+              <span class="macro-name">CARBS</span>
+              <span class="macro-value">180g / 220g</span>
+            </div>
+            <div class="macro-track">
+              <div class="macro-bar carbs" style="width: 81.8%;"></div>
+            </div>
+          </div>
+          <div class="macro-item">
+            <div class="macro-header">
+              <span class="macro-name">FAT</span>
+              <span class="macro-value">58g / 70g</span>
+            </div>
+            <div class="macro-track">
+              <div class="macro-bar fat" style="width: 82.8%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Today's Meals Section -->
+        <div class="meals-section-header">
+          <span class="section-label">Today's Meals</span>
+        </div>
+
+        <div class="meal-card">
+          <div class="meal-left">
+            <div class="meal-icon-box">🍳</div>
+            <div class="meal-info">
+              <div class="meal-title">Breakfast — Eggs & Oats</div>
+              <div class="meal-time">8:10 AM</div>
+            </div>
+          </div>
+          <div class="meal-calories">420 kcal</div>
+        </div>
+
+        <div class="meal-card">
+          <div class="meal-left">
+            <div class="meal-icon-box">🍗</div>
+            <div class="meal-info">
+              <div class="meal-title">Lunch — Chicken & Rice</div>
+              <div class="meal-time">1:30 PM</div>
+            </div>
+          </div>
+          <div class="meal-calories">680 kcal</div>
+        </div>
+
+        <div class="meal-card">
+          <div class="meal-left">
+            <div class="meal-icon-box">🥗</div>
+            <div class="meal-info">
+              <div class="meal-title">Snack — Greek Yogurt</div>
+              <div class="meal-time">4:45 PM</div>
+            </div>
+          </div>
+          <div class="meal-calories">220 kcal</div>
+        </div>
+      </section>
+
+      <!-- ==================== SCREEN 3: WORKOUT ==================== -->
+      <section class="screen" id="screen-workout">
+        <div class="header">
+          <div class="streak-pill">🔥 47</div>
+          <div class="avatar-btn">A</div>
+        </div>
+
+        <div class="title-row">
+          <h1 class="screen-title">WORKOUT</h1>
+        </div>
+
+        <!-- Recovery Card -->
+        <div class="card recovery-card">
+          <div class="recovery-circle">
+            <svg width="48" height="48">
+              <circle cx="24" cy="24" r="20" fill="none" stroke="#16181E" stroke-width="4"></circle>
+              <circle id="recovery-circle-bar" cx="24" cy="24" r="20" fill="none" stroke="var(--color-mint)" stroke-width="4" stroke-linecap="round" stroke-dasharray="125.6" stroke-dashoffset="17.5" transform="rotate(-90 24 24)"></circle>
+            </svg>
+            <div class="recovery-number">86</div>
+          </div>
+          <div class="recovery-info">
+            <div class="recovery-title">Recovery</div>
+            <div class="recovery-desc">Primed for a heavy session</div>
+          </div>
+        </div>
+
+        <!-- Title Header -->
+        <div class="workout-header">
+          <h2 class="workout-title">Leg Day</h2>
+          <div class="workout-subtitle">5 exercises · ~48 min</div>
+        </div>
+
+        <!-- Checklist of Exercises -->
+        <div class="exercise-list">
+          <div class="exercise-card checked">
+            <div class="checkbox-circle">
+              <span class="checkbox-icon">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </span>
+            </div>
+            <div class="exercise-info">
+              <div class="exercise-name">Barbell Back Squat</div>
+              <div class="exercise-details">4 × 8 · 80kg</div>
+            </div>
+          </div>
+
+          <div class="exercise-card checked">
+            <div class="checkbox-circle">
+              <span class="checkbox-icon">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </span>
+            </div>
+            <div class="exercise-info">
+              <div class="exercise-name">Romanian Deadlift</div>
+              <div class="exercise-details">3 × 10 · 60kg</div>
+            </div>
+          </div>
+
+          <div class="exercise-card">
+            <div class="checkbox-circle">
+              <span class="checkbox-icon">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </span>
+            </div>
+            <div class="exercise-info">
+              <div class="exercise-name">Walking Lunges</div>
+              <div class="exercise-details">3 × 12 · 20kg</div>
+            </div>
+          </div>
+
+          <div class="exercise-card">
+            <div class="checkbox-circle">
+              <span class="checkbox-icon">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </span>
+            </div>
+            <div class="exercise-info">
+              <div class="exercise-name">Leg Press</div>
+              <div class="exercise-details">4 × 10 · 140kg</div>
+            </div>
+          </div>
+
+          <div class="exercise-card">
+            <div class="checkbox-circle">
+              <span class="checkbox-icon">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </span>
+            </div>
+            <div class="exercise-info">
+              <div class="exercise-name">Calf Raises</div>
+              <div class="exercise-details">4 × 15 · 50kg</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="large-btn" style="margin-top: auto;">Start Workout</button>
+      </section>
+
+      <!-- ==================== SCREEN 4: SLEEP ==================== -->
+      <section class="screen" id="screen-sleep">
+        <div class="header">
+          <div class="streak-pill">🔥 47</div>
+          <div class="avatar-btn" id="avatar-btn">A</div>
+        </div>
+
+        <div class="title-row">
+          <h1 class="screen-title">SLEEP</h1>
+        </div>
+
+        <div class="sleep-duration-container">
+          <div class="sleep-hours">7h 42m</div>
+          <div class="sleep-score">Good sleep · Quality score 84</div>
+        </div>
+
+        <div class="sleep-stages-section">
+          <div class="section-label">Sleep Stages</div>
+          <div class="stages-bar">
+            <div class="stage-segment deep"></div>
+            <div class="stage-segment rem"></div>
+            <div class="stage-segment light"></div>
+            <div class="stage-segment awake"></div>
+          </div>
+          <div class="stages-labels">
+            <div class="stage-label-item">
+              <span class="stage-dot deep"></span> Deep 22%
+            </div>
+            <div class="stage-label-item">
+              <span class="stage-dot rem"></span> REM 28%
+            </div>
+            <div class="stage-label-item">
+              <span class="stage-dot light"></span> Light 42%
+            </div>
+            <div class="stage-label-item">
+              <span class="stage-dot awake"></span> Awake 8%
+            </div>
+          </div>
+        </div>
+
+        <div class="this-week-section">
+          <div class="section-label">This Week</div>
+          <div class="sleep-chart-row">
+            <div class="chart-bar-container">
+              <div class="chart-bar-track"><div class="chart-bar-fill" style="height: 60%;"></div></div>
+              <div class="chart-day-label">M</div>
+            </div>
+            <div class="chart-bar-container">
+              <div class="chart-bar-track"><div class="chart-bar-fill" style="height: 60%;"></div></div>
+              <div class="chart-day-label">T</div>
+            </div>
+            <div class="chart-bar-container">
+              <div class="chart-bar-track"><div class="chart-bar-fill" style="height: 45%;"></div></div>
+              <div class="chart-day-label">W</div>
+            </div>
+            <div class="chart-bar-container">
+              <div class="chart-bar-track"><div class="chart-bar-fill" style="height: 80%;"></div></div>
+              <div class="chart-day-label">T</div>
+            </div>
+            <div class="chart-bar-container">
+              <div class="chart-bar-track"><div class="chart-bar-fill" style="height: 65%;"></div></div>
+              <div class="chart-day-label">F</div>
+            </div>
+            <div class="chart-bar-container">
+              <div class="chart-bar-track"><div class="chart-bar-fill" style="height: 90%;"></div></div>
+              <div class="chart-day-label">S</div>
+            </div>
+            <div class="chart-bar-container">
+              <div class="chart-bar-track"><div class="chart-bar-fill active" style="height: 72%;"></div></div>
+              <div class="chart-day-label active">S</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card bedtime-card" style="margin-top: auto;">
+          <div class="bedtime-icon-circle">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          </div>
+          <div class="bedtime-info">
+            <div class="bedtime-time">Next bedtime: 10:30 PM</div>
+            <div class="bedtime-desc">Keeps your recovery on track</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SCREEN 5: HOME CLONE ==================== -->
+      <section class="screen" id="screen-home-clone">
+        <div class="header">
+          <div class="streak-pill">🔥 47</div>
+          <div class="avatar-btn">A</div>
+        </div>
+
+        <div class="circle-progress-container">
+          <svg class="circle-svg" width="200" height="200">
+            <circle class="circle-bg" cx="100" cy="100" r="85"></circle>
+            <circle class="circle-bar" cx="100" cy="100" r="85" stroke="var(--color-mint)" stroke-dasharray="534" stroke-dashoffset="171"></circle>
+            <circle class="circle-bar" cx="100" cy="100" r="85" stroke="var(--color-coral)" stroke-dasharray="534" stroke-dashoffset="363" transform="rotate(244.8 100 100)"></circle>
+          </svg>
+          <div class="circle-text-container">
+            <div class="circle-number">68%</div>
+            <div class="circle-label">MOMENTUM</div>
+          </div>
+        </div>
+
+        <div class="this-week-section">
+          <div class="section-label">This Week</div>
+          <div class="days-row">
+            <div class="day-item">
+              <div class="day-circle"><svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="none" stroke="#16181E" stroke-width="2.5"></circle><circle cx="16" cy="16" r="12" fill="none" stroke="var(--color-mint)" stroke-width="2.5" stroke-dasharray="75.4" stroke-dashoffset="0"></circle></svg></div>
+              <div class="day-label">M</div>
+            </div>
+            <div class="day-item">
+              <div class="day-circle"><svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="none" stroke="#16181E" stroke-width="2.5"></circle><circle cx="16" cy="16" r="12" fill="none" stroke="var(--color-mint)" stroke-width="2.5" stroke-dasharray="75.4" stroke-dashoffset="15" stroke-linecap="round"></circle></svg></div>
+              <div class="day-label">T</div>
+            </div>
+            <div class="day-item">
+              <div class="day-circle"><svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="none" stroke="#16181E" stroke-width="2.5"></circle><circle cx="16" cy="16" r="12" fill="none" stroke="var(--color-coral)" stroke-width="2.5" stroke-dasharray="75.4" stroke-dashoffset="25" stroke-linecap="round"></circle></svg></div>
+              <div class="day-label">W</div>
+            </div>
+            <div class="day-item">
+              <div class="day-circle"><svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="none" stroke="#16181E" stroke-width="2.5"></circle><circle cx="16" cy="16" r="12" fill="none" stroke="var(--color-mint)" stroke-width="2.5" stroke-dasharray="75.4" stroke-dashoffset="0"></circle></svg></div>
+              <div class="day-label">T</div>
+            </div>
+            <div class="day-item">
+              <div class="day-circle"><svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="none" stroke="#16181E" stroke-width="2.5"></circle><circle cx="16" cy="16" r="12" fill="none" stroke="var(--color-mint)" stroke-width="2.5" stroke-dasharray="75.4" stroke-dashoffset="20" stroke-linecap="round"></circle></svg></div>
+              <div class="day-label">F</div>
+            </div>
+            <div class="day-item">
+              <div class="day-circle"><svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="none" stroke="#16181E" stroke-width="2.5"></circle><circle cx="16" cy="16" r="12" fill="none" stroke="var(--color-mint)" stroke-width="2.5" stroke-dasharray="75.4" stroke-dashoffset="5" stroke-linecap="round"></circle></svg></div>
+              <div class="day-label">S</div>
+            </div>
+            <div class="day-item">
+              <div class="day-circle"><svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="none" stroke="#16181E" stroke-width="2.5"></circle><circle cx="16" cy="16" r="12" fill="none" stroke="var(--color-blue)" stroke-width="2.5" stroke-dasharray="75.4" stroke-dashoffset="30" stroke-linecap="round"></circle></svg></div>
+              <div class="day-label active">S</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card water-card">
+          <div class="water-left">
+            <div class="water-icon-circle">💧</div>
+            <div class="water-info">
+              <div class="water-qty"><strong>1,200</strong> / 2,500 ml</div>
+              <div class="water-action">Tap to log a glass</div>
+            </div>
+          </div>
+          <button class="plus-btn">+</button>
+        </div>
+
+        <div class="card next-up-card">
+          <div class="next-up-tag">Next Up</div>
+          <div class="next-up-title">Leg Day — 6:00 PM</div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Page Indicator Dots -->
+    <div class="page-indicators">
+      <div class="dot" data-screen="home"></div>
+      <div class="dot" data-screen="diet"></div>
+      <div class="dot" data-screen="workout"></div>
+      <div class="dot active sleep" data-screen="sleep"></div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
